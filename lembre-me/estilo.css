@@ -1621,6 +1621,17 @@ select option {
     background-color: var(--warning-light);
     color: var(--warning-color);
 }
+
+.notification-status.info {
+    background-color: var(--info-light);
+    color: var(--info-color);
+    margin-top: 15px;
+}
+  
+.notification-status ol {
+    margin-top: 8px;
+    margin-left: 25px;
+}
   
 .permission-prompt {
     position: fixed;
