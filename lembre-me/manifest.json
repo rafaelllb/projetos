@@ -1,0 +1,27 @@
+{
+  "name": "Lembre-me: Sistema de Gerenciamento",
+  "short_name": "Lembre-me",
+  "description": "Gerenciador de contas e compromissos com lembretes",
+  "start_url": "/index.html",
+  "display": "standalone",
+  "background_color": "#2b2b58",
+  "theme_color": "#7a67ee",
+  "icons": [
+    {
+      "src": "/icon-192x192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "/icon-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ],
+  "gcm_sender_id": "",
+  "gcm_user_visible_only": true,
+  "permissions": [
+    "notifications",
+    "background"
+  ]
+}

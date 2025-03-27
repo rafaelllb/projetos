@@ -1,0 +1,522 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sistema de Lembretes - Contas e Compromissos</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.2.0/css/all.min.css">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap">
+    <link rel="stylesheet" href="estilo.css">
+    <link rel="stylesheet" href="auth-styles.css">
+</head>
+<body>
+    <!-- Componente de autenticação -->
+    <div id="auth-container" class="auth-container">
+        <div class="auth-modal">
+            <div class="auth-header">
+                <div class="auth-logo">
+                    <i class="fas fa-clipboard-list"></i>
+                    <h3>Lembre-me</h3>
+                </div>
+                <div class="auth-tabs">
+                    <button id="login-tab" class="auth-tab active">Login</button>
+                    <button id="register-tab" class="auth-tab">Cadastro</button>
+                </div>
+            </div>
+            
+            <div id="login-form" class="auth-form active">
+                <div class="form-group">
+                    <label for="login-email">Email</label>
+                    <input type="email" id="login-email" required>
+                </div>
+                <div class="form-group">
+                    <label for="login-password">Senha</label>
+                    <input type="password" id="login-password" required>
+                </div>
+                <div id="login-error" class="auth-error"></div>
+                <div class="form-actions">
+                    <button id="login-button" class="btn btn-save">Entrar</button>
+                </div>
+            </div>
+            
+            <div id="register-form" class="auth-form">
+                <div class="form-group">
+                    <label for="register-name">Nome</label>
+                    <input type="text" id="register-name" required>
+                </div>
+                <div class="form-group">
+                    <label for="register-email">Email</label>
+                    <input type="email" id="register-email" required>
+                </div>
+                <div class="form-group">
+                    <label for="register-password">Senha</label>
+                    <input type="password" id="register-password" required>
+                </div>
+                <div class="form-group">
+                    <label for="register-password-confirm">Confirmar Senha</label>
+                    <input type="password" id="register-password-confirm" required>
+                </div>
+                <div id="register-error" class="auth-error"></div>
+                <div class="form-actions">
+                    <button id="register-button" class="btn btn-save">Cadastrar</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Estrutura principal -->
+    <div id="sidebar">
+        <div class="sidebar-header">
+            <i class="fas fa-clipboard-list"></i>
+            <h3>Lembre-me</h3>
+        </div>
+        <div class="sidebar-menu">
+            <div class="menu-item active" data-page="dashboard-page">
+                <i class="fas fa-chart-pie"></i>
+                <span>Dashboard</span>
+            </div>
+            <div class="menu-item" data-page="bills-page">
+                <i class="fas fa-file-invoice-dollar"></i>
+                <span>Contas</span>
+            </div>
+            <div class="menu-item" data-page="appointments-page">
+                <i class="fas fa-calendar-alt"></i>
+                <span>Compromissos</span>
+            </div>
+            <div class="menu-item" data-page="settings-page">
+                <i class="fas fa-cog"></i>
+                <span>Configurações</span>
+            </div>
+        </div>
+    </div>
+    <div class="sidebar-overlay"></div>
+    <div id="content">
+        <div class="navbar">
+            <button class="toggle-btn">
+                <i class="fas fa-bars"></i>
+            </button>
+            <div class="search-container">
+                <i class="fas fa-search"></i>
+                <input type="text" placeholder="Pesquisar...">
+            </div>
+            <div class="user-profile">
+                <span>Olá, Usuário</span>
+            </div>
+        </div>
+        
+        <!-- Container principal de conteúdo -->
+        <div id="main-content">
+            <!-- Página Dashboard -->
+            <div id="dashboard-page" class="page active">
+                <div class="dashboard">
+                    <div class="card">
+                        <div class="card-header">
+                            <div class="card-title">Resumo Financeiro</div>
+                            <i class="fas fa-ellipsis-v"></i>
+                        </div>
+                        <div class="card-body">
+                            <div class="stats">
+                                <div class="stat-item">
+                                    <div class="stat-value" id="total-pending">R$ 0</div>
+                                    <div class="stat-label">A pagar</div>
+                                </div>
+                                <div class="stat-item">
+                                    <div class="stat-value" id="total-paid">R$ 0</div>
+                                    <div class="stat-label">Pago (mês)</div>
+                                </div>
+                                <div class="stat-item">
+                                    <div class="stat-value" id="total-late">R$ 0</div>
+                                    <div class="stat-label">Atrasado</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="card">
+                        <div class="card-header">
+                            <div class="card-title">Próximos Compromissos</div>
+                            <i class="fas fa-ellipsis-v"></i>
+                        </div>
+                        <div class="card-body">
+                            <ul class="reminder-list" id="upcoming-appointments">
+                                <!-- Preenchido pelo JavaScript -->
+                            </ul>
+                        </div>
+                    </div>
+                    <div class="card">
+                        <div class="card-header">
+                            <div class="card-title">Contas Próximas</div>
+                            <i class="fas fa-ellipsis-v"></i>
+                        </div>
+                        <div class="card-body">
+                            <ul class="reminder-list" id="upcoming-bills">
+                                <!-- Preenchido pelo JavaScript -->
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Página Contas -->
+            <div id="bills-page" class="page">
+                <div class="view-controls">
+                    <div class="view-options">
+                        <button class="view-option active" data-view="list">
+                            <i class="fas fa-list"></i> Lista
+                        </button>
+                        <button class="view-option" data-view="grid">
+                            <i class="fas fa-th-large"></i> Cartões
+                        </button>
+                        <button class="view-option" data-view="calendar">
+                            <i class="fas fa-calendar"></i> Calendário
+                        </button>
+                    </div>
+                    <button class="add-btn" id="add-bill-btn">
+                        <i class="fas fa-plus"></i> Nova Conta
+                    </button>
+                </div>
+                
+                <div class="reminders-container list-view active" id="bills-list-view">
+                    <!-- Preenchido pelo JavaScript -->
+                </div>
+                
+                <div class="reminders-container grid-view" id="bills-grid-view">
+                    <!-- Preenchido pelo JavaScript -->
+                </div>
+                
+                <div class="reminders-container calendar-view" id="bills-calendar-view">
+                    <div class="calendar-header">
+                        <div class="calendar-controls">
+                            <button id="prev-month-btn"><i class="fas fa-chevron-left"></i></button>
+                        </div>
+                        <div class="calendar-title" id="calendar-title">Mês, Ano</div>
+                        <div class="calendar-controls">
+                            <button id="next-month-btn"><i class="fas fa-chevron-right"></i></button>
+                        </div>
+                    </div>
+                    <div class="calendar-grid" id="calendar-grid">
+                        <!-- Preenchido pelo JavaScript -->
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Página Compromissos -->
+            <div id="appointments-page" class="page">
+                <div class="view-controls">
+                    <div class="view-options">
+                        <button class="view-option active" data-view="list">
+                            <i class="fas fa-list"></i> Lista
+                        </button>
+                        <button class="view-option" data-view="grid">
+                            <i class="fas fa-th-large"></i> Cartões
+                        </button>
+                        <button class="view-option" data-view="calendar">
+                            <i class="fas fa-calendar"></i> Calendário
+                        </button>
+                    </div>
+                    <button class="add-btn" id="add-appointment-btn">
+                        <i class="fas fa-plus"></i> Novo Compromisso
+                    </button>
+                </div>
+                
+                <div class="reminders-container list-view active" id="appointments-list-view">
+                    <!-- Preenchido pelo JavaScript -->
+                </div>
+                
+                <div class="reminders-container grid-view" id="appointments-grid-view">
+                    <!-- Preenchido pelo JavaScript -->
+                </div>
+                
+                <div class="reminders-container calendar-view" id="appointments-calendar-view">
+                    <div class="calendar-header">
+                        <div class="calendar-controls">
+                            <button id="appointments-prev-month-btn"><i class="fas fa-chevron-left"></i></button>
+                        </div>
+                        <div class="calendar-title" id="appointments-calendar-title">Mês, Ano</div>
+                        <div class="calendar-controls">
+                            <button id="appointments-next-month-btn"><i class="fas fa-chevron-right"></i></button>
+                        </div>
+                    </div>
+                    <div class="calendar-grid" id="appointments-calendar-grid">
+                        <!-- Preenchido pelo JavaScript -->
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Página Configurações -->
+            <div id="settings-page" class="page">
+                <div class="card">
+                    <div class="card-header">
+                        <div class="card-title">Configurações</div>
+                    </div>
+                    <div class="card-body">
+                        <div class="form-group">
+                            <label for="notification-time">Horário para notificações</label>
+                            <input type="time" id="notification-time" value="08:00">
+                        </div>
+                        <div class="form-group">
+                            <label for="advance-days">Dias de antecedência para avisos</label>
+                            <input type="number" id="advance-days" min="1" max="30" value="3">
+                        </div>
+                        <div class="form-group">
+                            <label>Notificações</label>
+                            <div>
+                                <input type="checkbox" id="email-notification" checked>
+                                <label for="email-notification">Email</label>
+                            </div>
+                            <div>
+                                <input type="checkbox" id="browser-notification" checked>
+                                <label for="browser-notification">Navegador</label>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label>Testar Notificações</label>
+                            <button class="btn btn-save" id="test-notification-btn">
+                              <i class="fas fa-bell"></i> Enviar Notificação de Teste
+                            </button>
+                            <div id="notification-status" class="notification-status"></div>
+                        </div>
+                        <div class="form-actions">
+                            <button class="btn btn-save" id="save-settings-btn">Salvar</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Modal para adicionar/editar conta -->
+    <div class="modal" id="bill-modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <div class="modal-title">Nova Conta</div>
+                <button class="close-btn">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form id="bill-form">
+                    <input type="hidden" id="bill-id">
+                    <div class="form-group">
+                        <label for="bill-title">Título</label>
+                        <input type="text" id="bill-title" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="bill-amount">Valor (R$)</label>
+                        <input type="number" id="bill-amount" step="0.01" min="0" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="bill-due-date">Data de Vencimento</label>
+                        <input type="date" id="bill-due-date" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="bill-category">Categoria</label>
+                        <select id="bill-category">
+                            <option value="moradia">Moradia</option>
+                            <option value="transporte">Transporte</option>
+                            <option value="alimentação">Alimentação</option>
+                            <option value="saúde">Saúde</option>
+                            <option value="educação">Educação</option>
+                            <option value="lazer">Lazer</option>
+                            <option value="outros">Outros</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="bill-recurrence">Recorrência</label>
+                        <select id="bill-recurrence">
+                            <option value="none">Não se repete</option>
+                            <option value="monthly">Mensal</option>
+                            <option value="bimonthly">Bimestral</option>
+                            <option value="quarterly">Trimestral</option>
+                            <option value="yearly">Anual</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="bill-status">Status</label>
+                        <select id="bill-status">
+                            <option value="pending">Pendente</option>
+                            <option value="paid">Pago</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="bill-notes">Observações</label>
+                        <textarea id="bill-notes"></textarea>
+                    </div>
+                    <div class="form-actions">
+                        <button type="button" class="btn btn-cancel" id="cancel-bill-btn">Cancelar</button>
+                        <button type="submit" class="btn btn-save">Salvar</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Modal para adicionar/editar compromisso -->
+    <div class="modal" id="appointment-modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <div class="modal-title">Novo Compromisso</div>
+                <button class="close-btn">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form id="appointment-form">
+                    <input type="hidden" id="appointment-id">
+                    <div class="form-group">
+                        <label for="appointment-title">Título</label>
+                        <input type="text" id="appointment-title" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="appointment-date">Data</label>
+                        <input type="date" id="appointment-date" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="appointment-time">Hora</label>
+                        <input type="time" id="appointment-time" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="appointment-location">Local</label>
+                        <input type="text" id="appointment-location">
+                    </div>
+                    <div class="form-group">
+                        <label for="appointment-category">Categoria</label>
+                        <select id="appointment-category">
+                            <option value="pessoal">Pessoal</option>
+                            <option value="trabalho">Trabalho</option>
+                            <option value="saúde">Saúde</option>
+                            <option value="lazer">Lazer</option>
+                            <option value="outros">Outros</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="appointment-reminder">Lembrete</label>
+                        <select id="appointment-reminder">
+                            <option value="none">Sem lembrete</option>
+                            <option value="15min">15 minutos antes</option>
+                            <option value="30min">30 minutos antes</option>
+                            <option value="1hour">1 hora antes</option>
+                            <option value="1day">1 dia antes</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="appointment-notes">Observações</label>
+                        <textarea id="appointment-notes"></textarea>
+                    </div>
+                    <div class="form-actions">
+                        <button type="button" class="btn btn-cancel" id="cancel-appointment-btn">Cancelar</button>
+                        <button type="submit" class="btn btn-save">Salvar</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Modal para detalhes do dia -->
+    <div class="modal" id="day-details-modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <div class="modal-title" id="day-details-date">Data</div>
+                <button class="close-btn">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="day-details">
+                    <div class="day-details-header">
+                        <div class="day-details-title">Contas</div>
+                    </div>
+                    <ul class="day-details-list" id="day-bills-list">
+                        <!-- Preenchido pelo JavaScript -->
+                    </ul>
+                    
+                    <div class="day-details-header">
+                        <div class="day-details-title">Compromissos</div>
+                    </div>
+                    <ul class="day-details-list" id="day-appointments-list">
+                        <!-- Preenchido pelo JavaScript -->
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Estilos adicionais para o menu do usuário e notificações -->
+    <style>
+        .user-menu {
+            background-color: var(--bg-white);
+            border-radius: var(--border-radius);
+            box-shadow: var(--shadow-lg);
+            z-index: 1000;
+            width: 240px;
+            overflow: hidden;
+            animation: fadeIn 0.2s ease-out;
+        }
+        
+        .user-menu-header {
+            padding: 15px;
+            border-bottom: 1px solid var(--border-color);
+            font-weight: 500;
+            color: var(--text-dark);
+            background-color: var(--bg-light);
+        }
+        
+        .user-menu-item {
+            padding: 12px 15px;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+        
+        .user-menu-item:hover {
+            background-color: var(--bg-light);
+            color: var(--primary-color);
+        }
+        
+        .user-menu-item i {
+            margin-right: 10px;
+            width: 18px;
+            text-align: center;
+        }
+        
+        .notification {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background-color: var(--bg-white);
+            border-radius: var(--border-radius);
+            box-shadow: var(--shadow-lg);
+            width: 300px;
+            z-index: 9999;
+            overflow: hidden;
+            animation: slideIn 0.3s ease-out forwards;
+        }
+        
+        .notification.success {
+            border-left: 4px solid var(--success-color);
+        }
+        
+        .notification.info {
+            border-left: 4px solid var(--info-color);
+        }
+        
+        .notification.error {
+            border-left: 4px solid var(--danger-color);
+        }
+    </style>
+
+    <!-- Scripts modulares -->
+    <script type="module" src="storage-module.js"></script>
+    <script type="module" src="compression-module.js"></script>
+    <script type="module" src="firebase-module.js"></script>
+    <script type="module" src="api-module.js"></script>
+    <script type="module" src="main-script.js"></script>
+    <script type="module" src="notification-module.js"></script>
+
+    <!-- Configuração PWA (Progressive Web App) -->
+    <script>
+        // Verificar se o navegador suporta Service Workers
+        if ('serviceWorker' in navigator) {
+        window.addEventListener('load', function() {
+            // O Service Worker será registrado via main-script.js
+            console.log('Aplicativo preparado para trabalhar offline e enviar notificações');
+        });
+        }
+    </script>
+    
+    <link rel="icon" href="favicon.ico">
+    <link rel="manifest" href="manifest.json">    
+</body>
+</html>
