@@ -13,6 +13,7 @@ import { AdsManager, adsStyles } from './ads-module.js';
 import themeManager from './theme-module.js';
 import createSearchManager from './search-module.js';
 import createNotificationManager from './notification-module.js';
+import createInAppNotificationManager from './in-app-notification-module.js';
 
 // Global instance
 window.persistenceAPI = persistenceAPI;
@@ -318,6 +319,10 @@ async function initializeApp() {
     const notificationManager = createNotificationManager(persistenceAPI);
     await notificationManager.initialize();
     window.notificationManager = notificationManager;
+
+    // Inicializar gerenciador de notificações em página
+    const inAppNotificationManager = createInAppNotificationManager(persistenceAPI);
+    window.inAppNotificationManager = inAppNotificationManager;
     
     // Initialize notification UI
     initNotificationUI();

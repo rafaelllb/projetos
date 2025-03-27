@@ -22,6 +22,13 @@ export class UIManager {
       document.getElementById('save-settings-btn').addEventListener('click', () => {
         this.saveSettings();
       });
+
+      // In app Notification
+      document.getElementById('test-in-app-notification-btn').addEventListener('click', () => {
+        if (window.inAppNotificationManager) {
+          window.inAppNotificationManager.sendTestNotification();
+        }
+      });
     }
     
     // Configure mobile navigation
@@ -82,6 +89,9 @@ export class UIManager {
         emailNotification: document.getElementById('email-notification').checked,
         browserNotification: document.getElementById('browser-notification').checked
       };
+
+      settings.notificationSound = document.getElementById('notification-sound').checked;
+      settings.notificationVolume = document.getElementById('notification-volume').value / 100;
       
       this.persistenceAPI.saveSettings(settings);
       

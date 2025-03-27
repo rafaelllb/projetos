@@ -269,6 +269,24 @@
                             </div>
                         </div>
                         <div class="form-group">
+                            <label>Notificações em Página</label>
+                            <div>
+                              <input type="checkbox" id="in-app-notification" checked>
+                              <label for="in-app-notification">Mostrar notificações na página</label>
+                            </div>
+                            <div>
+                              <input type="checkbox" id="notification-sound" checked>
+                              <label for="notification-sound">Reproduzir som</label>
+                            </div>
+                            <div>
+                              <label for="notification-volume">Volume</label>
+                              <input type="range" id="notification-volume" min="0" max="100" value="50">
+                            </div>
+                            <button class="btn btn-save" id="test-in-app-notification-btn">
+                              <i class="fas fa-bell"></i> Testar Notificação em Página
+                            </button>
+                        </div>
+                        <div class="form-group">
                             <label>Service Worker Status</label>
                             <div id="sw-status" class="notification-status"></div>
                         </div>                          
