@@ -231,7 +231,7 @@ const config = {
     cacheName: "reminders-app-v1",
     checkInterval: 30 * 60 * 1000, // 30 minutos
     enabled: true,
-    registrationPath: "/service-worker.js",
+    registrationPath: "/lembre-me/service-worker.js",
     indexedDBName: "RemindersBackup",
     indexedDBVersion: 1,
     indexedDBStore: "data",
