@@ -1,0 +1,20 @@
+name: Deploy GitHub Pages
+
+on:
+  push:
+    branches: [ lembre-me ]
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: Copy subdirectory content to root
+        run: |
+          mkdir -p public
+          cp -r lembre-me/* public/
+      - name: Deploy
+        uses: peaceiris/actions-gh-pages@v3
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./public
