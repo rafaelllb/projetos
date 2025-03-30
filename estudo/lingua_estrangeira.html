@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Assistente de Estudos</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: system-ui, -apple-system, sans-serif;
+            height: 100vh;
+            background: #f5f5f5;
+        }
+
+        .container {
+            display: flex;
+            height: 100vh;
+        }
+
+        .content-panel {
+            flex: 1;
+            padding: 20px;
+        }
+
+        .ai-panel {
+            width: 400px;
+            background: white;
+            padding: 20px;
+            box-shadow: -2px 0 10px rgba(0,0,0,0.1);
+            overflow-y: auto;
+        }
+
+        .card {
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+            padding: 15px;
+        }
+
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+
+        .controls {
+            display: flex;
+            gap: 10px;
+        }
+
+        .btn {
+            padding: 8px;
+            border-radius: 50%;
+            border: none;
+            cursor: pointer;
+            background: #f0f0f0;
+            transition: all 0.3s;
+        }
+
+        .btn:hover {
+            background: #e0e0e0;
+        }
+
+        .btn.active {
+            background: #3b82f6;
+            color: white;
+        }
+
+        .btn.recording {
+            background: #ef4444;
+            color: white;
+        }
+
+        .level-select {
+            padding: 5px;
+            border-radius: 4px;
+            border: 1px solid #ddd;
+        }
+
+        .placeholder {
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #666;
+        }
+
+        .example-card {
+            background: #f0f7ff;
+            padding: 15px;
+            border-radius: 6px;
+            margin-top: 10px;
+        }
+
+        .audio-btn {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            color: #3b82f6;
+            background: none;
+            border: none;
+            cursor: pointer;
+            margin-top: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="content-panel">
+            <div class="card" style="height: calc(100vh - 40px);">
+                <div class="header">
+                    <h2>Conteúdo Capturado</h2>
+                    <div class="controls">
+                        <button id="screenBtn" class="btn" title="Capturar Tela">📺</button>
+                        <button id="micBtn" class="btn" title="Gravar Áudio">🎤</button>
+                    </div>
+                </div>
+                <div id="captureArea" class="placeholder">
+                    Clique no ícone de tela para iniciar a captura
+                </div>
+            </div>
+        </div>
+
+        <div class="ai-panel">
+            <div class="header">
+                <span>👑 Nível</span>
+                <select class="level-select">
+                    <option>Iniciante</option>
+                    <option>Intermediário</option>
+                    <option>Avançado</option>
+                </select>
+            </div>
+
+            <div class="card">
+                <h3>📝 Resumo em Tempo Real</h3>
+                <div id="summary" style="margin-top: 10px;">
+                    <div style="height: 20px; background: #f0f0f0; width: 80%; margin-bottom: 10px;"></div>
+                    <div style="height: 20px; background: #f0f0f0; width: 60%;"></div>
+                </div>
+            </div>
+
+            <div class="card">
+                <h3>📚 Exemplos</h3>
+                <div class="example-card">
+                    <p>Exemplo gerado baseado no contexto</p>
+                    <button class="audio-btn">
+                        🔊 Ouvir pronúncia
+                    </button>
+                </div>
+            </div>
+
+            <div id="transcription" class="card" style="display: none;">
+                <h3>🎙️ Transcrição de Voz</h3>
+                <div style="background: #fff0f0; padding: 10px; border-radius: 6px; margin-top: 10px;">
+                    <p>Gravando...</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const screenBtn = document.getElementById('screenBtn');
+        const micBtn = document.getElementById('micBtn');
+        const transcription = document.getElementById('transcription');
+
+        screenBtn.addEventListener('click', async () => {
+            try {
+                const stream = await navigator.mediaDevices.getDisplayMedia();
+                screenBtn.classList.toggle('active');
+                // Lógica de captura de tela
+            } catch (err) {
+                console.error('Erro ao capturar tela:', err);
+            }
+        });
+
+        micBtn.addEventListener('click', () => {
+            micBtn.classList.toggle('recording');
+            transcription.style.display = micBtn.classList.contains('recording') ? 'block' : 'none';
+            // Lógica de gravação de áudio
+        });
+    </script>
+</body>
+</html>

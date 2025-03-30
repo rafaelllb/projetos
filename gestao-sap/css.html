@@ -1,0 +1,348 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <title>Layouts CSS Interativos</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: system-ui, -apple-system, sans-serif;
+            padding: 2rem;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 2rem;
+        }
+
+        .title {
+            font-size: 1.5rem;
+            font-weight: bold;
+        }
+
+        .toggle-btn {
+            background: #3b82f6;
+            color: white;
+            border: none;
+            padding: 0.5rem 1rem;
+            border-radius: 0.5rem;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .toggle-btn:hover {
+            background: #2563eb;
+        }
+
+        .layout-tabs {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+
+        .tab-btn {
+            padding: 0.5rem 1rem;
+            border: none;
+            border-radius: 0.5rem;
+            cursor: pointer;
+            background: #e5e7eb;
+        }
+
+        .tab-btn.active {
+            background: #3b82f6;
+            color: white;
+        }
+
+        .layout-container {
+            position: relative;
+            height: 500px;
+        }
+
+        .layout {
+            display: none;
+            height: 100%;
+        }
+
+        .layout.active {
+            display: block;
+        }
+
+        /* Grid Layout */
+        .grid-layout {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 1rem;
+            height: 100%;
+        }
+
+        /* Flexbox Layout */
+        .flex-layout {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 1rem;
+            height: 100%;
+        }
+
+        /* Masonry Layout */
+        .masonry-layout {
+            columns: 3;
+            column-gap: 1rem;
+            height: 100%;
+        }
+
+        .box {
+            background: #dbeafe;
+            padding: 1rem;
+            position: relative;
+        }
+
+        /* Grid específico */
+        .grid-layout .box-main {
+            grid-column: span 2;
+            grid-row: span 2;
+        }
+
+        .grid-layout .box-footer {
+            grid-column: span 2;
+        }
+
+        /* Flexbox específico */
+        .flex-layout .box {
+            flex: 1;
+            min-width: 200px;
+        }
+
+        .flex-layout .box-large {
+            flex: 2;
+        }
+
+        /* Masonry específico */
+        .masonry-layout .box {
+            break-inside: avoid;
+            margin-bottom: 1rem;
+        }
+
+        .masonry-layout .h-1 { height: 100px; }
+        .masonry-layout .h-2 { height: 150px; }
+        .masonry-layout .h-3 { height: 200px; }
+
+        /* Guidelines */
+        .guidelines {
+            display: none;
+            position: absolute;
+            inset: 0;
+            border: 2px dashed #3b82f6;
+            pointer-events: none;
+        }
+
+        body.show-grid .guidelines {
+            display: block;
+        }
+
+        body.show-grid .box {
+            outline: 2px solid #3b82f6;
+        }
+
+        .code-block {
+            background: #1e293b;
+            color: #e2e8f0;
+            padding: 1rem;
+            border-radius: 0.5rem;
+            margin-top: 1rem;
+            font-family: monospace;
+            white-space: pre-wrap;
+            display: none;
+        }
+
+        .code-block.active {
+            display: block;
+        }
+
+        .layout-info {
+            margin-bottom: 1rem;
+        }
+
+        .layout-title {
+            font-size: 1.25rem;
+            font-weight: bold;
+            margin-bottom: 0.5rem;
+        }
+
+        .layout-description {
+            color: #6b7280;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1 class="title">Demonstração de Layouts CSS</h1>
+            <button class="toggle-btn" onclick="document.body.classList.toggle('show-grid')">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <rect width="18" height="18" x="3" y="3" rx="2"/>
+                    <path d="M3 9h18"/>
+                    <path d="M3 15h18"/>
+                    <path d="M9 3v18"/>
+                    <path d="M15 3v18"/>
+                </svg>
+                <span id="grid-text">Mostrar Grade</span>
+            </button>
+        </div>
+
+        <div class="layout-tabs">
+            <button class="tab-btn active" onclick="showLayout('grid')">Grid Layout</button>
+            <button class="tab-btn" onclick="showLayout('flex')">Flexbox Layout</button>
+            <button class="tab-btn" onclick="showLayout('masonry')">Layout Masonry</button>
+        </div>
+
+        <div class="layout-info">
+            <div class="layout-description" id="layout-description">
+                Layout em grade com áreas definidas
+            </div>
+        </div>
+
+        <div class="layout-container">
+            <div class="layout grid-layout active" id="grid">
+                <div class="box box-main">
+                    Área Principal
+                    <div class="guidelines"></div>
+                </div>
+                <div class="box">
+                    Sidebar
+                    <div class="guidelines"></div>
+                </div>
+                <div class="box">
+                    Conteúdo 1
+                    <div class="guidelines"></div>
+                </div>
+                <div class="box box-footer">
+                    Footer
+                    <div class="guidelines"></div>
+                </div>
+            </div>
+
+            <div class="layout flex-layout" id="flex">
+                <div class="box">
+                    Item Flexível 1
+                    <div class="guidelines"></div>
+                </div>
+                <div class="box box-large">
+                    Item Flexível 2
+                    <div class="guidelines"></div>
+                </div>
+                <div class="box">
+                    Item Flexível 3
+                    <div class="guidelines"></div>
+                </div>
+                <div class="box">
+                    Item Flexível 4
+                    <div class="guidelines"></div>
+                </div>
+            </div>
+
+            <div class="layout masonry-layout" id="masonry">
+                <div class="box h-1">Item 1</div>
+                <div class="box h-3">Item 2</div>
+                <div class="box h-2">Item 3</div>
+                <div class="box h-3">Item 4</div>
+                <div class="box h-1">Item 5</div>
+                <div class="box h-2">Item 6</div>
+            </div>
+        </div>
+
+        <pre class="code-block active" id="grid-code">
+.grid-layout {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1rem;
+}
+
+.box-main {
+    grid-column: span 2;
+    grid-row: span 2;
+}
+
+.box-footer {
+    grid-column: span 2;
+}</pre>
+
+        <pre class="code-block" id="flex-code">
+.flex-layout {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1rem;
+}
+
+.box {
+    flex: 1;
+    min-width: 200px;
+}
+
+.box-large {
+    flex: 2;
+}</pre>
+
+        <pre class="code-block" id="masonry-code">
+.masonry-layout {
+    columns: 3;
+    column-gap: 1rem;
+}
+
+.box {
+    break-inside: avoid;
+    margin-bottom: 1rem;
+}</pre>
+    </div>
+
+    <script>
+        function showLayout(type) {
+            // Atualiza botões
+            document.querySelectorAll('.tab-btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            event.target.classList.add('active');
+
+            // Atualiza layouts
+            document.querySelectorAll('.layout').forEach(layout => {
+                layout.classList.remove('active');
+            });
+            document.getElementById(type).classList.add('active');
+
+            // Atualiza código
+            document.querySelectorAll('.code-block').forEach(code => {
+                code.classList.remove('active');
+            });
+            document.getElementById(type + '-code').classList.add('active');
+
+            // Atualiza descrição
+            const descriptions = {
+                grid: 'Layout em grade com áreas definidas',
+                flex: 'Layout flexível com alinhamento dinâmico',
+                masonry: 'Layout em coluna com alturas variadas'
+            };
+            document.getElementById('layout-description').textContent = descriptions[type];
+        }
+
+        // Atualiza texto do botão de grade
+        document.querySelector('.toggle-btn').addEventListener('click', function() {
+            const text = document.getElementById('grid-text');
+            text.textContent = document.body.classList.contains('show-grid') ? 
+                'Ocultar Grade' : 'Mostrar Grade';
+        });
+    </script>
+</body>
+</html>

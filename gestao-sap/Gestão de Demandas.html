@@ -1,0 +1,986 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SAP Demand Control System</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        :root {
+            --primary: #6366f1;
+            --primary-dark: #4f46e5;
+            --secondary: #10b981;
+            --background: #0f172a;
+            --surface: #1e293b;
+            --text: #e2e8f0;
+            --text-secondary: #94a3b8;
+            --danger: #ef4444;
+            --warning: #f59e0b;
+        }
+
+        body {
+            background-color: var(--background);
+            color: var(--text);
+            min-height: 100vh;
+            padding: 2rem;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        /* Header and Stats */
+        .header {
+            text-align: center;
+            margin-bottom: 3rem;
+            position: relative;
+        }
+
+        .logo {
+            font-size: 2.5rem;
+            font-weight: 700;
+            background: linear-gradient(45deg, var(--primary), var(--secondary));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 2rem;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 3rem;
+        }
+
+        .stat-card {
+            background: var(--surface);
+            padding: 1.5rem;
+            border-radius: 1rem;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            text-align: center;
+            transition: transform 0.3s ease;
+        }
+
+        .stat-card:hover {
+            transform: translateY(-5px);
+        }
+
+        .stat-value {
+            font-size: 2.5rem;
+            font-weight: bold;
+            color: var(--primary);
+            margin-bottom: 0.5rem;
+        }
+
+        .stat-label {
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+        }
+
+        /* Main Grid Layout */
+        .main-grid {
+            display: grid;
+            grid-template-columns: 350px 1fr;
+            gap: 2rem;
+        }
+
+        /* Form Styling */
+        .form-card {
+            background: var(--surface);
+            padding: 2rem;
+            border-radius: 1rem;
+            position: sticky;
+            top: 2rem;
+        }
+
+        .form-title {
+            font-size: 1.5rem;
+            margin-bottom: 1.5rem;
+            color: var(--primary);
+        }
+
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 0.5rem;
+            color: var(--text-secondary);
+        }
+
+        input, select, textarea {
+            width: 100%;
+            padding: 0.75rem;
+            background: var(--background);
+            border: 1px solid var(--text-secondary);
+            border-radius: 0.5rem;
+            color: var(--text);
+            font-size: 0.9rem;
+            transition: all 0.3s ease;
+        }
+
+        input:focus, select:focus, textarea:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.2);
+        }
+
+        textarea {
+            min-height: 100px;
+            resize: vertical;
+        }
+
+        button {
+            background: var(--primary);
+            color: white;
+            padding: 0.75rem 1.5rem;
+            border: none;
+            border-radius: 0.5rem;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+
+        button:hover {
+            background: var(--primary-dark);
+            transform: translateY(-2px);
+        }
+
+        /* Demands List */
+        .demands-section {
+            background: var(--surface);
+            padding: 2rem;
+            border-radius: 1rem;
+        }
+
+        .filters {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 2rem;
+            flex-wrap: wrap;
+        }
+
+        .filters select {
+            max-width: 200px;
+        }
+
+        .demands-grid {
+            display: grid;
+            gap: 1.5rem;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+        }
+
+        .demand-card {
+            background: var(--background);
+            padding: 1.5rem;
+            border-radius: 0.8rem;
+            position: relative;
+            transition: all 0.3s ease;
+        }
+
+        .demand-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
+        }
+
+        .demand-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+        }
+
+        .client-name {
+            font-weight: 600;
+            color: var(--primary);
+        }
+
+        .module-tag {
+            background: rgba(99, 102, 241, 0.1);
+            color: var(--primary);
+            padding: 0.25rem 0.75rem;
+            border-radius: 1rem;
+            font-size: 0.8rem;
+        }
+
+        .demand-description {
+            color: var(--text-secondary);
+            margin-bottom: 1rem;
+            display: -webkit-box;
+            -webkit-line-clamp: 3;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+
+        .demand-footer {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 1rem;
+            padding-top: 1rem;
+            border-top: 1px solid rgba(148, 163, 184, 0.1);
+        }
+
+        .demand-status {
+            padding: 0.25rem 0.75rem;
+            border-radius: 1rem;
+            font-size: 0.8rem;
+            font-weight: 600;
+        }
+		
+		.status-dropdown {
+			position: relative;
+			display: inline-block;
+		}
+
+		.status-dropdown-content {
+			display: none;
+			position: absolute;
+			right: 0;
+			background-color: var(--surface);
+			min-width: 160px;
+			box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
+			z-index: 1;
+			border-radius: 0.5rem;
+			margin-top: 0.5rem;
+		}
+
+		.status-dropdown-content button {
+			width: 100%;
+			text-align: left;
+			padding: 0.75rem 1rem;
+			border-radius: 0;
+			background: none;
+			color: var(--text);
+			font-weight: normal;
+		}
+
+		.status-dropdown-content button:hover {
+			background-color: var(--background);
+			transform: none;
+		}
+
+		.status-dropdown-content.show {
+			display: block;
+		}
+
+        .status-pendente {
+            background: rgba(245, 158, 11, 0.1);
+            color: var(--warning);
+        }
+
+        .status-em_andamento {
+            background: rgba(99, 102, 241, 0.1);
+            color: var(--primary);
+        }
+
+        .status-concluido {
+            background: rgba(16, 185, 129, 0.1);
+            color: var(--secondary);
+        }
+		
+		.status-cancelado {
+			background: rgba(239, 68, 68, 0.1);
+			color: var(--danger);
+		}
+
+        .demand-actions {
+            display: flex;
+            gap: 0.5rem;
+			flex-wrap: wrap; /* Permite que os botões quebrem em telas menores */
+			justify-content: flex-end; /* Alinha os botões à direita */
+		}
+
+        .demand-actions button {
+            padding: 0.5rem 1rem;
+            font-size: 0.8rem;
+			min-width: 80px; /* Garante uma largura mínima para os botões */
+		}
+
+        /* Modal Styling */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(15, 23, 42, 0.9);
+            z-index: 1000;
+        }
+		
+		.modal-header {
+			display: flex;
+			justify-content: space-between;
+			align-items: center;
+			margin-bottom: 1.5rem;
+		}
+
+        .modal-content {
+            background: var(--surface);
+            margin: 5% auto;
+            padding: 2rem;
+            width: 90%;
+            max-width: 800px;
+            border-radius: 1rem;
+            position: relative;
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+		
+		.modal-status-dropdown {
+			position: relative;
+			display: inline-block;
+			margin-right: 2.5rem; /* Espaço para o botão de fechar */
+		}
+
+		.modal-status-label {
+			display: flex;
+			align-items: center;
+			gap: 0.5rem;
+		}
+
+        .close-button {
+            position: absolute;
+            right: 1.5rem;
+            top: 1.5rem;
+            font-size: 1.5rem;
+            color: var(--text-secondary);
+            cursor: pointer;
+            transition: color 0.3s ease;
+        }
+
+        .close-button:hover {
+            color: var(--text);
+        }
+
+        .modal-tabs {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 2rem;
+            border-bottom: 1px solid rgba(148, 163, 184, 0.1);
+            padding-bottom: 1rem;
+        }
+
+        .tab {
+            background: none;
+            border: none;
+            color: var(--text-secondary);
+            padding: 0.5rem 1rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .tab.active {
+            color: var(--primary);
+            background: rgba(99, 102, 241, 0.1);
+            border-radius: 0.5rem;
+        }
+
+        .timeline-item {
+            background: var(--background);
+            padding: 1rem;
+            border-radius: 0.5rem;
+            margin-bottom: 1rem;
+        }
+
+        .timeline-date {
+            color: var(--text-secondary);
+            font-size: 0.8rem;
+            margin-bottom: 0.5rem;
+        }
+
+        @media (max-width: 1024px) {
+            .main-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .form-card {
+                position: static;
+            }
+        }
+
+        @media (max-width: 640px) {
+            .stats-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .demands-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .filters {
+                flex-direction: column;
+            }
+
+            .filters select {
+                max-width: 100%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header class="header">
+            <h1 class="logo">SAP Demand Control System</h1>
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-value" id="total-demands">0</div>
+                    <div class="stat-label">Total de Demandas</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value" id="pending-demands">0</div>
+                    <div class="stat-label">Pendentes</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value" id="in-progress-demands">0</div>
+                    <div class="stat-label">Em Andamento</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value" id="completed-demands">0</div>
+                    <div class="stat-label">Concluídas</div>
+                </div>
+            </div>
+        </header>
+
+        <div class="main-grid">
+            <!-- Form Section -->
+            <div class="form-card">
+                <h2 class="form-title">Nova Demanda</h2>
+                <form id="demand-form">
+                    <div class="form-group">
+                        <label for="client">Cliente</label>
+                        <input type="text" id="client" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="module">Módulo SAP</label>
+                        <select id="module" required>
+                            <option value="">Selecione o módulo</option>
+                            <option value="FI">FI (Financeiro)</option>
+                            <option value="CO">CO (Controladoria)</option>
+                            <option value="MM">MM (Materiais)</option>
+                            <option value="SD">SD (Vendas)</option>
+                            <option value="PP">PP (Produção)</option>
+                            <option value="HR">HR (Recursos Humanos)</option>
+                            <option value="ISU">Bill (Faturamento)</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="description">Descrição</label>
+                        <textarea id="description" required></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label for="deadline">Prazo</label>
+                        <input type="date" id="deadline" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="priority">Prioridade</label>
+                        <select id="priority" required>
+                            <option value="baixa">Baixa</option>
+                            <option value="media">Média</option>
+                            <option value="alta">Alta</option>
+                        </select>
+                    </div>
+                    <button type="submit">Cadastrar Demanda</button>
+                </form>
+            </div>
+
+            <!-- Demands Section -->
+            <div class="demands-section">
+                <div class="filters">
+                    <select id="status-filter">
+                        <option value="">Todos os Status</option>
+                        <option value="pendente">Pendente</option>
+                        <option value="em_andamento">Em Andamento</option>
+                        <option value="concluido">Concluído</option>
+                    </select>
+                    <select id="module-filter">
+                        <option value="">Todos os Módulos</option>
+                        <option value="FI">FI</option>
+                        <option value="CO">CO</option>
+                        <option value="MM">MM</option>
+                        <option value="SD">SD</option>
+                        <option value="PP">PP</option>
+                        <option value="HR">HR</option>
+                        <option value="ISU">BILL</option>
+                    </select>
+                    <select id="priority-filter">
+                        <option value="">Todas as Prioridades</option>
+                        <option value="baixa">Baixa</option>
+                        <option value="media">Média</option>
+                        <option value="alta">Alta</option>
+                    </select>
+                </div>
+                <div id="demands-grid" class="demands-grid">
+                    <!-- Demands will be inserted here -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal -->
+    <div id="details-modal" class="modal">
+        <div class="modal-content">
+            <span class="close-button">&times;</span>
+            <h2 class="form-title">Detalhes da Demanda</h2>
+            
+            <div class="modal-tabs">
+                <button class="tab active" onclick="showTab('timeline')">Timeline</button>
+                <button class="tab" onclick="showTab('comments')">Comentários</button>
+                <button class="tab" onclick="showTab('hours')">Horas Trabalhadas</button>
+            </div>
+
+            <div id="timeline-tab" class="tab-content active">
+                <div id="timeline-content"></div>
+            </div>
+
+            <div id="comments-tab" class="tab-content">
+                <div id="comments-content"></div>
+                <form id="comment-form" class="form-group">
+                    <textarea id="comment-text" required placeholder="Digite seu comentário..."></textarea>
+                    <button type="submit">Adicionar Comentário</button>
+                </form>
+            </div>
+
+            <div id="hours-tab" class="tab-content">
+                <form id="hours-form" class="form-group">
+                    <div class="form-group">
+                        <label>Horas Trabalhadas</label>
+                        <input type="number" id="hours-input" min="0" step="0.5" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Descrição do Trabalho</label>
+                        <textarea id="hours-description" required placeholder="Descreva o trabalho realizado..."></textarea>
+                    </div>
+                    <button type="submit">Registrar Horas</button>
+                </form>
+                <div id="hours-history"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Estrutura de dados para armazenar as demandas
+        let demands = JSON.parse(localStorage.getItem('demands')) || [];
+        
+        // Função para gerar ID único
+        function generateId() {
+            return Math.random().toString(36).substr(2, 9);
+        }
+
+        // Função para formatar data
+        function formatDate(date) {
+            return new Date(date).toLocaleDateString('pt-BR');
+        }
+		
+		function getStatusOptions(currentStatus) {
+			const statusOptions = {
+				'novo': ['em_andamento', 'cancelado'],
+				'pendente': ['em_andamento', 'cancelado', 'concluido'],
+				'em_andamento': ['pendente', 'concluido', 'cancelado'],
+				'concluido': [''],
+				'cancelado': ['']
+			};
+			return statusOptions[currentStatus] || [];
+		}
+
+		function getStatusLabel(status) {
+			const labels = {
+				'novo': 'Novo',
+				'pendente': 'Pendente',
+				'em_andamento': 'Em Andamento',
+				'concluido': 'Concluído',
+				'cancelado': 'Cancelado'
+			};
+			return labels[status] || status;
+		}
+		
+		function toggleStatusDropdown(id) {
+			const dropdown = document.querySelector(`#status-dropdown-${id}`);
+			dropdown.classList.toggle('show');
+			
+			// Fecha outros dropdowns abertos
+			document.querySelectorAll('.status-dropdown-content.show').forEach(dd => {
+				if (dd.id !== `status-dropdown-${id}`) {
+					dd.classList.remove('show');
+				}
+			});
+		}
+
+        // Função para adicionar nova demanda
+        function addDemand(event) {
+            event.preventDefault();
+
+            const newDemand = {
+                id: generateId(),
+                client: document.getElementById('client').value,
+                module: document.getElementById('module').value,
+                description: document.getElementById('description').value,
+                deadline: document.getElementById('deadline').value,
+                priority: document.getElementById('priority').value,
+                status: 'novo',
+                createdAt: new Date().toISOString(),
+                timeline: [{
+                    date: new Date().toISOString(),
+                    action: 'Demanda criada',
+                    status: 'novo'
+                }],
+                comments: [],
+                workHours: []
+            };
+
+            demands.push(newDemand);
+            saveDemands();
+            updateDemandsList();
+            updateStatistics();
+            event.target.reset();
+        }
+
+        // Função para salvar demandas no localStorage
+        function saveDemands() {
+            localStorage.setItem('demands', JSON.stringify(demands));
+        }
+
+        // Função para atualizar status de uma demanda
+        function updateDemandStatus(id, newStatus) {
+            const demandIndex = demands.findIndex(demand => demand.id === id);
+            if (demandIndex !== -1) {
+                const demand = demands[demandIndex];
+                demand.status = newStatus;
+                demand.timeline.push({
+                    date: new Date().toISOString(),
+                    action: `Status alterado para ${newStatus}`,
+                    status: newStatus
+                });
+                saveDemands();
+                updateDemandsList();
+                updateStatistics();
+            }
+        }
+
+        // Função para deletar uma demanda
+        function deleteDemand(id) {
+            if (confirm('Tem certeza que deseja excluir esta demanda?')) {
+                demands = demands.filter(demand => demand.id !== id);
+                saveDemands();
+                updateDemandsList();
+                updateStatistics();
+            }
+        }
+
+        // Funções do Modal
+        let currentDemandId = null;
+
+        function openDemandDetails(id) {
+            currentDemandId = id;
+            const demand = demands.find(d => d.id === id);
+            if (!demand) return;
+
+            document.getElementById('details-modal').style.display = 'block';
+            showTab('timeline');
+            updateModalContent(demand);
+        }
+
+        function closeModal() {
+            document.getElementById('details-modal').style.display = 'none';
+            currentDemandId = null;
+        }
+
+        function showTab(tabName) {
+            // Atualiza classes ativas
+            document.querySelectorAll('.tab').forEach(tab => tab.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
+            
+            document.querySelector(`[onclick="showTab('${tabName}')"]`).classList.add('active');
+            document.getElementById(`${tabName}-tab`).classList.add('active');
+            
+            if (currentDemandId) {
+                const demand = demands.find(d => d.id === currentDemandId);
+                updateModalContent(demand);
+            }
+        }
+
+        function updateModalContent(demand) {
+			// Verifica se já existe um modal-header
+			const existingHeader = document.querySelector('.modal-content .modal-header');
+			const modalContent = document.querySelector('.modal-content');
+			
+			// Se já existe um header, limpa apenas o conteúdo interno
+			if (existingHeader) {
+				existingHeader.querySelector('.modal-header-content').innerHTML = `
+					<h2 class="form-title">${demand.client}</h2>
+					<div class="modal-status-dropdown">
+						<div class="modal-status-label">
+							<span>Status:</span>
+							<button class="status-btn status-${demand.status}" onclick="toggleStatusDropdownModal('${demand.id}')">
+								${getStatusLabel(demand.status)} ▼
+							</button>
+						</div>
+						<div id="status-dropdown-modal-${demand.id}" class="status-dropdown-content">
+							${getStatusOptions(demand.status).map(status => `
+								<button onclick="updateDemandStatusModal('${demand.id}', '${status}')" 
+										class="status-${status}">
+									${getStatusLabel(status)}
+								</button>
+							`).join('')}
+						</div>
+					</div>`;
+			
+			} else {
+				// Adiciona o header com status na modal
+				const modalTitle = document.querySelector('.modal-content .form-title');
+				const modalHeader = document.createElement('div');
+				modalHeader.className = 'modal-header';
+				
+				modalHeader.innerHTML = `
+					<div class="modal-header-content">
+						<h2 class="form-title">${demand.client}</h2>
+						<div class="modal-status-dropdown">
+							<div class="modal-status-label">
+								<span>Status:</span>
+								<button class="status-btn status-${demand.status}" onclick="toggleStatusDropdownModal('${demand.id}')">
+									${getStatusLabel(demand.status)} ▼
+								</button>
+							</div>
+							<div id="status-dropdown-modal-${demand.id}" class="status-dropdown-content">
+								${getStatusOptions(demand.status).map(status => `
+									<button onclick="updateDemandStatusModal('${demand.id}', '${status}')" 
+											class="status-${status}">
+										${getStatusLabel(status)}
+									</button>
+								`).join('')}
+							</div>
+						</div>
+					</div>
+					<span class="close-button">&times;</span>
+				`;
+
+				// Substitui o título existente pelo novo header
+				modalTitle.parentNode.replaceChild(modalHeader, modalTitle);
+			}
+
+			// Atualiza Timeline
+			const timelineContent = document.getElementById('timeline-content');
+			timelineContent.innerHTML = demand.timeline.map(item => `
+				<div class="timeline-item">
+					<div class="timeline-date">${formatDate(item.date)} ${new Date(item.date).toLocaleTimeString()}</div>
+					<div>${item.action}</div>
+				</div>
+			`).join('');
+
+            // Atualiza Comentários
+            const commentsContent = document.getElementById('comments-content');
+            commentsContent.innerHTML = demand.comments.map(comment => `
+                <div class="timeline-item">
+                    <div class="timeline-date">${formatDate(comment.date)} ${new Date(comment.date).toLocaleTimeString()}</div>
+                    <div>${comment.text}</div>
+                </div>
+            `).join('');
+
+            // Atualiza Histórico de Horas
+            const hoursHistory = document.getElementById('hours-history');
+            hoursHistory.innerHTML = demand.workHours.map(entry => `
+                <div class="timeline-item">
+                    <div class="timeline-date">${formatDate(entry.date)} ${new Date(entry.date).toLocaleTimeString()}</div>
+                    <div class="stat-value">${entry.hours}h</div>
+                    <div>${entry.description}</div>
+                </div>
+            `).join('');
+        }
+
+        // Função para adicionar comentário
+        function addComment(event) {
+            event.preventDefault();
+            if (!currentDemandId) return;
+
+            const commentText = document.getElementById('comment-text').value;
+            const demandIndex = demands.findIndex(d => d.id === currentDemandId);
+            
+            if (demandIndex !== -1) {
+                demands[demandIndex].comments.push({
+                    date: new Date().toISOString(),
+                    text: commentText
+                });
+                
+                demands[demandIndex].timeline.push({
+                    date: new Date().toISOString(),
+                    action: 'Comentário adicionado',
+                    comment: commentText
+                });
+
+                saveDemands();
+                updateModalContent(demands[demandIndex]);
+                event.target.reset();
+            }
+        }
+
+        // Função para registrar horas
+        function addWorkHours(event) {
+            event.preventDefault();
+            if (!currentDemandId) return;
+
+            const hours = document.getElementById('hours-input').value;
+            const description = document.getElementById('hours-description').value;
+            const demandIndex = demands.findIndex(d => d.id === currentDemandId);
+            
+            if (demandIndex !== -1) {
+                demands[demandIndex].workHours.push({
+                    date: new Date().toISOString(),
+                    hours: parseFloat(hours),
+                    description: description
+                });
+                
+                demands[demandIndex].timeline.push({
+                    date: new Date().toISOString(),
+                    action: `Registrado ${hours} horas de trabalho`,
+                    description: description
+                });
+
+                saveDemands();
+                updateModalContent(demands[demandIndex]);
+                event.target.reset();
+            }
+        }
+
+        // Função para atualizar a lista de demandas com filtros
+		function updateDemandsList() {
+			const statusFilter = document.getElementById('status-filter').value;
+			const moduleFilter = document.getElementById('module-filter').value;
+			const priorityFilter = document.getElementById('priority-filter').value;
+
+			let filteredDemands = demands;
+
+			if (statusFilter) {
+				filteredDemands = filteredDemands.filter(demand => demand.status === statusFilter);
+			}
+			if (moduleFilter) {
+				filteredDemands = filteredDemands.filter(demand => demand.module === moduleFilter);
+			}
+			if (priorityFilter) {
+				filteredDemands = filteredDemands.filter(demand => demand.priority === priorityFilter);
+			}
+
+			const demandsGrid = document.getElementById('demands-grid');
+			demandsGrid.innerHTML = filteredDemands.map(demand => {
+				const totalHours = demand.workHours.reduce((sum, entry) => sum + entry.hours, 0);
+				const statusOptions = getStatusOptions(demand.status);
+				
+				return `
+					<div class="demand-card">
+						<div class="demand-header">
+							<span class="client-name">${demand.client}</span>
+							<span class="module-tag">${demand.module}</span>
+						</div>
+						<p class="demand-description">${demand.description}</p>
+						<div style="color: var(--text-secondary);">
+							<div>Prazo: ${formatDate(demand.deadline)}</div>
+							<div>Horas: ${totalHours.toFixed(1)}h</div>
+						</div>
+						<div class="demand-footer">
+							<span class="demand-status status-${demand.status}">${getStatusLabel(demand.status)}</span>
+							<div class="demand-actions">
+								<button onclick="openDemandDetails('${demand.id}')">Detalhes</button>
+								<div class="status-dropdown">
+									<button class="status-btn" onclick="toggleStatusDropdown('${demand.id}')">
+										Mudar Status ▼
+									</button>
+									<div id="status-dropdown-${demand.id}" class="status-dropdown-content">
+										${statusOptions.map(status => `
+											<button onclick="updateDemandStatus('${demand.id}', '${status}')" 
+													class="status-${status}">
+												${getStatusLabel(status)}
+											</button>
+										`).join('')}
+									</div>
+								</div>
+								<button onclick="deleteDemand('${demand.id}')" style="background: var(--danger);">Excluir</button>
+							</div>
+						</div>
+					</div>
+				`;
+			}).join('');
+		}
+				
+		function toggleStatusDropdownModal(id) {
+			const dropdown = document.querySelector(`#status-dropdown-modal-${id}`);
+			dropdown.classList.toggle('show');
+			
+			// Fecha outros dropdowns abertos
+			document.querySelectorAll('.status-dropdown-content.show').forEach(dd => {
+				if (dd.id !== `status-dropdown-modal-${id}`) {
+					dd.classList.remove('show');
+				}
+			});
+		}
+		
+		function updateDemandStatusModal(id, newStatus) {
+			updateDemandStatus(id, newStatus);
+			const demand = demands.find(d => d.id === id);
+			if (demand) {
+				updateModalContent(demand);
+			}
+			
+			// Fecha o dropdown após a seleção
+			document.querySelector(`#status-dropdown-modal-${id}`).classList.remove('show');
+		}		
+
+        // Função para atualizar estatísticas
+        function updateStatistics() {
+            document.getElementById('total-demands').textContent = demands.length;
+            document.getElementById('pending-demands').textContent = 
+                demands.filter(demand => demand.status === 'pendente').length;
+            document.getElementById('in-progress-demands').textContent = 
+                demands.filter(demand => demand.status === 'em_andamento').length;
+            document.getElementById('completed-demands').textContent = 
+                demands.filter(demand => demand.status === 'concluido').length;
+        }
+
+        // Event Listeners
+        document.getElementById('demand-form').addEventListener('submit', addDemand);
+        document.getElementById('comment-form').addEventListener('submit', addComment);
+        document.getElementById('hours-form').addEventListener('submit', addWorkHours);
+        document.getElementById('status-filter').innerHTML = `
+			<option value="">Todos os Status</option>
+			<option value="pendente">Novo</option>
+			<option value="pendente">Pendente</option>
+			<option value="em_andamento">Em Andamento</option>
+			<option value="concluido">Concluído</option>
+			<option value="cancelado">Cancelado</option>
+		`;
+		document.getElementById('status-filter').addEventListener('change', updateDemandsList);
+        document.getElementById('module-filter').addEventListener('change', updateDemandsList);
+        document.getElementById('priority-filter').addEventListener('change', updateDemandsList);
+        
+        // Close modal when clicking outside
+		window.onclick = function(event) {
+			// Fecha a modal quando clica fora
+			const modal = document.getElementById('details-modal');
+			if (event.target === modal) {
+				closeModal();
+			}
+			
+			// Fecha os dropdowns quando clica fora
+			if (!event.target.matches('.status-btn')) {
+				document.querySelectorAll('.status-dropdown-content').forEach(dropdown => {
+					dropdown.classList.remove('show');
+				});
+			}
+		};
+
+        // Close button functionality
+        document.querySelector('.close-button').onclick = closeModal;
+
+        // Initialize
+        updateDemandsList();
+        updateStatistics();
+    </script>
+</body>
+</html>
