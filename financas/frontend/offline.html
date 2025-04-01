@@ -1,0 +1,228 @@
+<!-- /frontend/offline.html -->
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sem conexão - FinControl</title>
+    <link rel="manifest" href="/manifest.json">
+    <meta name="theme-color" content="#3498db">
+    <style>
+        :root {
+            --primary-color: #3498db;
+            --primary-dark: #2980b9;
+            --text-color: #333333;
+            --text-light: #666666;
+            --background-color: #f5f7fa;
+            --card-color: #ffffff;
+            --border-color: #e1e5e8;
+            --border-radius-md: 8px;
+            --spacing-md: 1rem;
+            --spacing-lg: 1.5rem;
+            --spacing-xl: 2rem;
+            --font-primary: 'Segoe UI', 'Roboto', 'Helvetica Neue', sans-serif;
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: var(--font-primary);
+            background-color: var(--background-color);
+            color: var(--text-color);
+            line-height: 1.5;
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+            padding: var(--spacing-md);
+        }
+        
+        .offline-container {
+            max-width: 600px;
+            margin: 0 auto;
+            padding: var(--spacing-xl);
+            background-color: var(--card-color);
+            border-radius: var(--border-radius-md);
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            text-align: center;
+            margin-top: 50px;
+        }
+        
+        .logo {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: var(--spacing-lg);
+        }
+        
+        .logo i {
+            font-size: 2.5rem;
+            color: var(--primary-color);
+            margin-right: var(--spacing-md);
+        }
+        
+        .logo h1 {
+            font-size: 2rem;
+            color: var(--primary-color);
+        }
+        
+        h2 {
+            margin-bottom: var(--spacing-lg);
+            color: var(--text-color);
+        }
+        
+        .offline-icon {
+            font-size: 5rem;
+            color: var(--text-light);
+            margin-bottom: var(--spacing-lg);
+        }
+        
+        p {
+            margin-bottom: var(--spacing-md);
+            color: var(--text-light);
+        }
+        
+        .btn {
+            display: inline-block;
+            padding: 0.5rem 1.5rem;
+            background-color: var(--primary-color);
+            color: white;
+            border: none;
+            border-radius: var(--border-radius-md);
+            cursor: pointer;
+            font-size: 1rem;
+            text-decoration: none;
+            margin-top: var(--spacing-lg);
+        }
+        
+        .btn:hover {
+            background-color: var(--primary-dark);
+        }
+        
+        .cached-data {
+            margin-top: var(--spacing-xl);
+            padding-top: var(--spacing-md);
+            border-top: 1px solid var(--border-color);
+            text-align: left;
+        }
+        
+        .cached-data h3 {
+            margin-bottom: var(--spacing-md);
+        }
+        
+        .data-section {
+            margin-bottom: var(--spacing-lg);
+        }
+        
+        @media (max-width: 600px) {
+            .offline-container {
+                padding: var(--spacing-md);
+                margin-top: 20px;
+            }
+            
+            .logo i {
+                font-size: 2rem;
+            }
+            
+            .logo h1 {
+                font-size: 1.5rem;
+            }
+            
+            .offline-icon {
+                font-size: 4rem;
+            }
+        }
+    </style>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+    <div class="offline-container">
+        <div class="logo">
+            <i class="fas fa-wallet"></i>
+            <h1>FinControl</h1>
+        </div>
+        
+        <div class="offline-icon">
+            <i class="fas fa-wifi-slash"></i>
+        </div>
+        
+        <h2>Sem conexão com a internet</h2>
+        
+        <p>No momento você está offline. Alguns recursos podem não estar disponíveis até que a conexão seja restabelecida.</p>
+        
+        <p>Você ainda pode acessar seus dados mais recentes salvos localmente.</p>
+        
+        <button class="btn" id="reloadBtn">Tentar novamente</button>
+        
+        <div class="cached-data">
+            <h3>Dados disponíveis offline</h3>
+            
+            <div class="data-section" id="transactionsSection">
+                <p>Carregando informações...</p>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        // Verificar se há conectividade quando a página carrega
+        window.addEventListener('online', () => {
+            window.location.reload();
+        });
+        
+        // Botão para tentar recarregar a página
+        document.getElementById('reloadBtn').addEventListener('click', () => {
+            window.location.reload();
+        });
+        
+        // Carregar dados salvos em cache
+        async function loadCachedData() {
+            try {
+                const transactionsSection = document.getElementById('transactionsSection');
+                
+                // Tentar abrir o IndexedDB
+                const request = indexedDB.open('FinControlDB', 1);
+                
+                request.onerror = () => {
+                    transactionsSection.innerHTML = `
+                        <p>Não foi possível acessar os dados armazenados localmente.</p>
+                    `;
+                };
+                
+                request.onsuccess = (event) => {
+                    const db = event.target.result;
+                    
+                    // Verificar transações recentes
+                    const transaction = db.transaction(['transactions'], 'readonly');
+                    const store = transaction.objectStore('transactions');
+                    const countRequest = store.count();
+                    
+                    countRequest.onsuccess = () => {
+                        const count = countRequest.result;
+                        
+                        if (count > 0) {
+                            transactionsSection.innerHTML = `
+                                <p>Você tem <strong>${count} transações</strong> salvas localmente que podem ser acessadas offline.</p>
+                            `;
+                        } else {
+                            transactionsSection.innerHTML = `
+                                <p>Nenhuma transação encontrada no armazenamento local.</p>
+                            `;
+                        }
+                    };
+                };
+            } catch (error) {
+                console.error('Erro ao carregar dados do cache:', error);
+                document.getElementById('transactionsSection').innerHTML = `
+                    <p>Erro ao acessar dados em cache.</p>
+                `;
+            }
+        }
+        
+        // Carregar dados do cache
+        loadCachedData();
+    </script>
+</body>
+</html>

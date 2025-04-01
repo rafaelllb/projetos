@@ -191,7 +191,7 @@ class FinControlApp {
      * Carrega as transações
      */
     async loadTransactions() {
-        const transactions = this.transactionManager.getTransactions();
+        const transactions = await this.transactionManager.getTransactions();
         const recentTransactionsList = document.getElementById('recentTransactionsList');
         
         if (!recentTransactionsList) return;

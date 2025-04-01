@@ -37,7 +37,24 @@ export class TransactionManager {
      * @returns {Promise<Array>} - Promise que resolve com a lista de transações
      */
     async getTransactions() {
-        return await this.storageManager.getTransactions();
+        try {
+            // If using IndexedDB
+            if (this.storageManager.useIndexedDB && this.storageManager.db) {
+                try {
+                    return await this.storageManager.getFromIndexedDB('transactions');
+                } catch (error) {
+                    console.error('Error retrieving transactions from IndexedDB:', error);
+                    // Fallback to localStorage
+                    return this.storageManager.getLocalStorage(this.storageManager.storageKeys.TRANSACTIONS) || [];
+                }
+            } else {
+                // Use localStorage as fallback
+                return this.storageManager.getLocalStorage(this.storageManager.storageKeys.TRANSACTIONS) || [];
+            }
+        } catch (error) {
+            console.error('Error in getTransactions:', error);
+            return []; // Return empty array as fallback
+        }
     }
     
     /**
