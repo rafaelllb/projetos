@@ -1,41 +1,240 @@
 // /frontend/js/app.js
-// Módulo principal da aplicação
+// Correção do sistema de rotas e inicialização da aplicação
 
 import { StorageManager } from './storage/storage-manager.js';
 import { AuthManager } from './auth/auth-manager.js';
 import { UIManager } from './ui/ui-manager.js';
 import { TransactionManager } from './transactions/transaction-manager.js';
 import { DashboardManager } from './dashboard/dashboard-manager.js';
+import { Router } from './router.js';
+import { DataLoader } from './utils/data-loader.js';
+import { LoadingManager } from './ui/loading-manager.js';
+import { chartManager } from './utils/chart-manager.js';
+import { singletonManager } from './utils/singleton-manager.js';
 
 /**
  * Classe principal da aplicação
+ * Corrigida para resolver problemas de navegação
  */
 class FinControlApp {
     constructor() {
+        // Inicializar gerenciadores de componentes
         this.storageManager = new StorageManager();
-        this.authManager = new AuthManager(this.storageManager);
+        this.authManager = new AuthManager();
         this.uiManager = new UIManager();
-        this.transactionManager = new TransactionManager(this.storageManager);
-        this.dashboardManager = new DashboardManager(this.transactionManager);
+        this.transactionManager = new TransactionManager();
+        this.dashboardManager = new DashboardManager();
         
+        // Registrar todas as instâncias no singletonManager
+        singletonManager.register('storageManager', this.storageManager);
+        singletonManager.register('authManager', this.authManager);
+        singletonManager.register('uiManager', this.uiManager);
+        singletonManager.register('transactionManager', this.transactionManager);
+        
+        // Aguardar o DOM estar completamente carregado antes de inicializar o router
+        setTimeout(() => {
+            // Inicializar o router com configuração melhorada
+            this.router = new Router({
+                rootElement: '#pageContainer',
+                defaultRoute: 'dashboard',
+                basePath: '/financas/frontend',
+                onRouteChange: (route, params, prevRoute) => {
+                    console.log(`App: Rota alterada de ${prevRoute || 'nenhuma'} para ${route}`);
+                    this.updateActiveNavLink(route);
+                },
+                routes: {
+                    'dashboard': {
+                        // Não fornecemos template ou controller específico para dashboard
+                        // Usaremos o conteúdo original do HTML
+                    },
+                    'transactions': {
+                        controller: async () => {
+                            return await this.uiManager.fetchPageContent('transactions');
+                        }
+                    },
+                    'budgets': {
+                        controller: async () => {
+                            return await this.uiManager.fetchPageContent('budgets');
+                        }
+                    },
+                    'goals': {
+                        controller: async () => {
+                            return await this.uiManager.fetchPageContent('goals');
+                        }
+                    },
+                    'reports': {
+                        controller: async () => {
+                            return await this.uiManager.fetchPageContent('reports');
+                        }
+                    },
+                    'profile': {
+                        controller: async () => {
+                            return await this.uiManager.fetchPageContent('profile');
+                        }
+                    },
+                    'settings': {
+                        controller: async () => {
+                            return await this.uiManager.fetchPageContent('settings');
+                        }
+                    }
+                }
+            });
+            
+            // Registrar router no singletonManager
+            singletonManager.register('router', this.router);
+        }, 100);  // Pequeno delay para garantir que o DOM está pronto
+
+        // Inicializar gerenciador de loading
+        this.loadingManager = new LoadingManager({
+            useSkeletons: true,
+            useOverlay: true,
+            minDisplayTime: 800
+        });
+        
+        // Inicializar data loader
+        this.dataLoader = new DataLoader(this.storageManager, {
+            batchSize: 150,
+            retryAttempts: 2,
+            retryDelay: 1000
+        });
+        
+        // Registrar gerenciadores adicionais no singletonManager
+        singletonManager.register('app', this);
+        singletonManager.register('loadingManager', this.loadingManager);
+        singletonManager.register('dataLoader', this.dataLoader);
+        
+        // Inicializar a aplicação
         this.init();
     }
     
-    /**
-     * Inicializa a aplicação
-     */
     async init() {
-        // Verificar estado de autenticação
-        this.checkAuth();
+        if (this._initializing || this._initialized) {
+            console.log('Aplicação já está inicializada ou em processo de inicialização');
+            return;
+        }
         
-        // Inicializar gerenciadores
-        this.uiManager.init();
+        this._initializing = true;
         
-        // Configurar listeners de eventos
-        this.setupEventListeners();
+        try {
+            // Inicializar gerenciador de loading
+            this.loadingManager.init();
+            
+            // Iniciar loading visual com feedback para o usuário
+            this.loadingManager.startLoading('Inicializando aplicação...');
+            
+            // Configurar callback para atualização de estado de carregamento
+            this.dataLoader.onStateUpdate(update => {
+                this.loadingManager.updateProgressFromStates(update.allStates);
+            });
+            
+            // Verificar estado de autenticação
+            this.checkAuth();
+
+            // Inicializar storage manager
+            await this.storageManager.initialize();
+            console.log('Storage inicializado com sucesso');
+            
+            // Verificar autenticação
+            await this.authManager.checkAuthentication();            
+            
+            // Inicializar gerenciador de UI
+            this.uiManager.init();
+
+            // Inicializar dashboard manager
+            if (this.dashboardManager.initialize) {
+                await this.dashboardManager.initialize();
+            }      
+            
+            // Configurar listeners de eventos
+            if (!this._listenersConfigured) {
+                this.setupEventListeners();
+                this._listenersConfigured = true;
+            }
+            
+            // Carregar dados iniciais com feedback visual
+            await this.loadInitialDataWithFeedback();
+            
+            this._initialized = true;
+            
+            // Finalizar carregamento
+            this.loadingManager.finishLoading();
+            
+            // Permitir que gerenciadores de componentes atualizem suas visualizações
+            this.notifyInitializationComplete();
+            
+            // Adicionar método de emergência para navegação
+            window.emergencyNavigate = (route) => {
+                console.log(`Navegação de emergência para: ${route}`);
+                
+                // Ocultar todas as páginas
+                const pageContainer = document.querySelector('#pageContainer');
+                if (pageContainer) {
+                    const pages = pageContainer.querySelectorAll('.page');
+                    pages.forEach(page => {
+                        page.classList.remove('active');
+                    });
+                    
+                    // Mostrar a página solicitada
+                    const targetPage = document.getElementById(`${route}Page`);
+                    if (targetPage) {
+                        targetPage.classList.add('active');
+                        return true;
+                    } else {
+                        console.error(`Página ${route} não encontrada`);
+                        return false;
+                    }
+                }
+                return false;
+            };
+            
+        } catch (error) {
+            console.error('Erro ao inicializar aplicação:', error);
+            
+            this.loadingManager.showLoadingError(
+                'Ocorreu um erro ao carregar os dados. Por favor, tente novamente.',
+                true,
+                () => {
+                    window.location.reload();
+                }
+            );
+            
+            throw error;
+        } finally {
+            this._initializing = false;
+        }
+    }
+
+    /**
+     * Notifica os gerenciadores que a aplicação foi completamente inicializada
+     * Isso permite atualização de componentes após carregamento de dados
+     */
+    notifyInitializationComplete() {
+        // Notificar outros gerenciadores através do singletonManager
+        const dashboardManager = singletonManager.get('dashboardManager');
+        if (dashboardManager && dashboardManager.onAppInitialized) {
+            dashboardManager.onAppInitialized();
+        }
         
-        // Carregar dados iniciais
-        await this.loadInitialData();
+        // Eventos de ciclo de vida da aplicação
+        document.dispatchEvent(new CustomEvent('fincontrol:initialized', {
+            detail: { timestamp: Date.now() }
+        }));
+    }
+    
+    /**
+     * Atualiza o link de navegação ativo
+     * @param {string} route - Rota atual
+     */
+    updateActiveNavLink(route) {
+        // Usar consistentemente data-route em vez de data-page
+        document.querySelectorAll('.main-nav a[data-route]').forEach(link => {
+            const linkRoute = link.getAttribute('data-route');
+            if (linkRoute === route) {
+                link.classList.add('active');
+            } else {
+                link.classList.remove('active');
+            }
+        });
     }
     
     /**
@@ -51,48 +250,61 @@ class FinControlApp {
         }
         
         // Atualizar UI baseado no estado de autenticação
-        document.getElementById('userInfo').querySelector('span').textContent = 
-            isAuthenticated ? this.authManager.getCurrentUser().name : 'Convidado';
+        const userElement = document.getElementById('userInfo')?.querySelector('span');
+        if (userElement) {
+            userElement.textContent = isAuthenticated ? this.authManager.getCurrentUser().name : 'Convidado';
+        }
     }
     
     /**
      * Configura os listeners de eventos
      */
     setupEventListeners() {
-        // Navegação principal
-        document.querySelectorAll('.main-nav a').forEach(link => {
-            link.addEventListener('click', (e) => {
-                e.preventDefault();
-                this.uiManager.navigateTo(link.dataset.page);
-            });
-        });
-        
         // Menu do usuário
         const userInfo = document.getElementById('userInfo');
         const userDropdown = document.getElementById('userDropdown');
         
-        userInfo.addEventListener('click', () => {
-            userDropdown.classList.toggle('hidden');
-        });
-        
-        // Fechar dropdown ao clicar fora dele
-        document.addEventListener('click', (e) => {
-            if (!userInfo.contains(e.target) && !userDropdown.contains(e.target)) {
-                userDropdown.classList.add('hidden');
-            }
-        });
+        if (userInfo && userDropdown) {
+            userInfo.addEventListener('click', () => {
+                userDropdown.classList.toggle('hidden');
+                userDropdown.classList.toggle('visible');
+                userInfo.classList.toggle('active');
+            });
+            
+            // Fechar dropdown ao clicar fora dele
+            document.addEventListener('click', (e) => {
+                if (!userInfo.contains(e.target) && !userDropdown.contains(e.target)) {
+                    userDropdown.classList.add('hidden');
+                    userDropdown.classList.remove('visible');
+                    userInfo.classList.remove('active');
+                }
+            });
+        }
         
         // Logout
-        document.getElementById('logoutBtn').addEventListener('click', (e) => {
-            e.preventDefault();
-            this.authManager.logout();
-            window.location.reload();
-        });
+        const logoutBtn = document.getElementById('logoutBtn');
+        if (logoutBtn) {
+            logoutBtn.addEventListener('click', (e) => {
+                this.authManager.logout();
+                // A redireção para a página de login já está configurada no href
+            });
+        }
         
         // Adicionar nova transação
-        document.getElementById('addTransactionBtn')?.addEventListener('click', () => {
-            this.uiManager.openModal('addTransactionModal');
-        });
+        const addTransactionBtn = document.getElementById('addTransactionBtn');
+        if (addTransactionBtn) {
+            addTransactionBtn.addEventListener('click', () => {
+                this.uiManager.openModal('addTransactionModal');
+            });
+        }
+        
+        // Adicionar nova meta
+        const addGoalBtn = document.getElementById('addGoalBtn');
+        if (addGoalBtn) {
+            addGoalBtn.addEventListener('click', () => {
+                this.uiManager.openModal('addGoalModal');
+            });
+        }
         
         // Fechar modais
         document.querySelectorAll('.close-modal').forEach(button => {
@@ -102,57 +314,72 @@ class FinControlApp {
         });
         
         // Formulário de transação
-        document.getElementById('transactionForm')?.addEventListener('submit', (e) => {
-            e.preventDefault();
-            this.handleTransactionFormSubmit();
-        });
-    }
-    
-    /**
-     * Carrega os dados iniciais da aplicação
-     */
-    async loadInitialData() {
-        // Carregar categorias
-        const categories = this.storageManager.getCategories();
-        if (!categories || categories.length === 0) {
-            // Carregar categorias padrão se não existirem
-            this.storageManager.setCategories(this.getDefaultCategories());
+        const transactionForm = document.getElementById('transactionForm');
+        if (transactionForm) {
+            transactionForm.addEventListener('submit', (e) => {
+                e.preventDefault();
+                this.handleTransactionFormSubmit();
+            });
         }
         
-        // Preencher select de categorias
-        this.populateCategorySelect();
+        // Formulário de meta
+        const goalForm = document.getElementById('goalForm');
+        if (goalForm) {
+            goalForm.addEventListener('submit', (e) => {
+                e.preventDefault();
+                this.handleGoalFormSubmit();
+            });
+        }
         
-        // Carregar transações
-        await this.loadTransactions();
-        
-        // Atualizar dashboard
-        this.updateDashboard();
+        // Seletor de período no dashboard
+        const periodSelect = document.getElementById('periodSelect');
+        if (periodSelect) {
+            periodSelect.addEventListener('change', (e) => {
+                // Obter dashboardManager do singletonManager para evitar dependência circular
+                const dashboardManager = singletonManager.get('dashboardManager');
+                if (dashboardManager) {
+                    dashboardManager.updateDashboard(e.target.value);
+                }
+            });
+        }
     }
     
     /**
-     * Retorna as categorias padrão
+     * Carrega os dados iniciais com feedback visual
      */
-    getDefaultCategories() {
-        return {
-            income: [
-                { id: 'salary', name: 'Salário', icon: 'fa-money-bill-wave' },
-                { id: 'investment', name: 'Investimentos', icon: 'fa-chart-line' },
-                { id: 'gift', name: 'Presentes', icon: 'fa-gift' },
-                { id: 'other_income', name: 'Outros', icon: 'fa-plus-circle' }
-            ],
-            expense: [
-                { id: 'housing', name: 'Moradia', icon: 'fa-home' },
-                { id: 'food', name: 'Alimentação', icon: 'fa-utensils' },
-                { id: 'transport', name: 'Transporte', icon: 'fa-car' },
-                { id: 'utilities', name: 'Contas', icon: 'fa-file-invoice' },
-                { id: 'healthcare', name: 'Saúde', icon: 'fa-heartbeat' },
-                { id: 'entertainment', name: 'Lazer', icon: 'fa-film' },
-                { id: 'education', name: 'Educação', icon: 'fa-graduation-cap' },
-                { id: 'shopping', name: 'Compras', icon: 'fa-shopping-bag' },
-                { id: 'personal', name: 'Pessoal', icon: 'fa-user' },
-                { id: 'other_expense', name: 'Outros', icon: 'fa-minus-circle' }
-            ]
-        };
+    async loadInitialDataWithFeedback() {
+        try {
+            // Carregar dados em paralelo
+            const loadResult = await this.dataLoader.loadAllData();
+            
+            if (!loadResult.success && !loadResult.partial) {
+                throw new Error('Falha ao carregar dados essenciais da aplicação');
+            }
+            
+            const { results } = loadResult;
+            
+            // Processar categorias
+            if (results.categories) {
+                // Preencher select de categorias
+                this.populateCategorySelect();
+            } else {
+                console.warn('Não foi possível carregar categorias');
+            }
+            
+            // Notificar o dashboard manager que dados foram carregados
+            // para atualizar a interface
+            const router = singletonManager.get('router');
+            const dashboardManager = singletonManager.get('dashboardManager');
+            
+            if (router && dashboardManager && router.getCurrentRoute() === 'dashboard') {
+                dashboardManager.updateDashboard();
+            }
+            
+            return results;
+        } catch (error) {
+            console.error('Erro ao carregar dados iniciais:', error);
+            throw error;
+        }
     }
     
     /**
@@ -188,80 +415,6 @@ class FinControlApp {
     }
     
     /**
-     * Carrega as transações
-     */
-    async loadTransactions() {
-        const transactions = await this.transactionManager.getTransactions();
-        const recentTransactionsList = document.getElementById('recentTransactionsList');
-        
-        if (!recentTransactionsList) return;
-        
-        if (transactions.length === 0) {
-            // Mostrar estado vazio
-            recentTransactionsList.innerHTML = `
-                <div class="empty-state">
-                    <i class="fas fa-receipt"></i>
-                    <p>Nenhuma transação registrada</p>
-                    <button class="btn btn-primary" id="addTransactionBtn">Adicionar Transação</button>
-                </div>
-            `;
-            
-            // Adicionar evento ao botão
-            document.getElementById('addTransactionBtn')?.addEventListener('click', () => {
-                this.uiManager.openModal('addTransactionModal');
-            });
-            
-            return;
-        }
-        
-        // Ordenar transações por data (mais recentes primeiro)
-        const sortedTransactions = [...transactions].sort((a, b) => 
-            new Date(b.date) - new Date(a.date)
-        );
-        
-        // Pegar apenas as 5 transações mais recentes
-        const recentTransactions = sortedTransactions.slice(0, 5);
-        
-        // Limpar lista
-        recentTransactionsList.innerHTML = '';
-        
-        // Adicionar transações
-        recentTransactions.forEach(transaction => {
-            const categories = this.storageManager.getCategories();
-            const category = categories[transaction.type].find(c => c.id === transaction.category);
-            
-            const transactionItem = document.createElement('div');
-            transactionItem.className = 'transaction-item';
-            transactionItem.innerHTML = `
-                <div class="transaction-icon ${transaction.type}">
-                    <i class="fas ${category?.icon || 'fa-money-bill'}"></i>
-                </div>
-                <div class="transaction-details">
-                    <div class="transaction-description">${transaction.description}</div>
-                    <div class="transaction-category">${category?.name || 'Sem categoria'}</div>
-                </div>
-                <div class="transaction-amount ${transaction.type}">
-                    ${transaction.type === 'income' ? '+' : '-'} R$ ${transaction.amount.toFixed(2)}
-                </div>
-                <div class="transaction-date">
-                    ${new Date(transaction.date).toLocaleDateString('pt-BR')}
-                </div>
-            `;
-            
-            recentTransactionsList.appendChild(transactionItem);
-        });
-    }
-    
-    /**
-     * Atualiza os dados do dashboard
-     */
-    updateDashboard() {
-        this.dashboardManager.updateSummary();
-        this.dashboardManager.updateExpensesByCategoryChart();
-        this.dashboardManager.updateCashFlowChart();
-    }
-    
-    /**
      * Manipula o envio do formulário de transação
      */
     handleTransactionFormSubmit() {
@@ -270,10 +423,12 @@ class FinControlApp {
         const amount = parseFloat(document.getElementById('transactionAmount').value);
         const category = document.getElementById('transactionCategory').value;
         const date = document.getElementById('transactionDate').value;
+        const notes = document.getElementById('transactionNotes')?.value || '';
         
         // Validar dados
         if (!description || !amount || !category || !date) {
-            alert('Por favor, preencha todos os campos.');
+            // Exibir mensagem de erro
+            this.uiManager.showError('Por favor, preencha todos os campos obrigatórios.');
             return;
         }
         
@@ -285,29 +440,131 @@ class FinControlApp {
             amount,
             category,
             date,
+            notes,
             createdAt: new Date().toISOString()
         };
         
         // Adicionar transação
         this.transactionManager.addTransaction(transaction);
         
-        // Recarregar transações e atualizar dashboard
-        this.loadTransactions();
-        this.updateDashboard();
-        
         // Fechar modal
         this.uiManager.closeAllModals();
         
+        // Exibir mensagem de sucesso
+        this.uiManager.showSuccess('Transação adicionada com sucesso!');
+        
         // Resetar formulário
         document.getElementById('transactionForm').reset();
+        
+        // Atualizar dashboard se estiver na rota dashboard
+        const router = singletonManager.get('router');
+        const dashboardManager = singletonManager.get('dashboardManager');
+        
+        if (router && dashboardManager && router.getCurrentRoute() === 'dashboard') {
+            dashboardManager.updateDashboard();
+        }
+    }
+    
+    /**
+     * Manipula o envio do formulário de meta
+     */
+    handleGoalFormSubmit() {
+        // [código existente mantido]
+    }
+    
+    /**
+     * Retorna as categorias padrão
+     */
+    getDefaultCategories() {
+        return {
+            income: [
+                { id: 'salary', name: 'Salário', icon: 'fa-money-bill-wave' },
+                { id: 'investment', name: 'Investimentos', icon: 'fa-chart-line' },
+                { id: 'gift', name: 'Presentes', icon: 'fa-gift' },
+                { id: 'other_income', name: 'Outros', icon: 'fa-plus-circle' }
+            ],
+            expense: [
+                { id: 'housing', name: 'Moradia', icon: 'fa-home' },
+                { id: 'food', name: 'Alimentação', icon: 'fa-utensils' },
+                { id: 'transport', name: 'Transporte', icon: 'fa-car' },
+                { id: 'utilities', name: 'Contas', icon: 'fa-file-invoice' },
+                { id: 'healthcare', name: 'Saúde', icon: 'fa-heartbeat' },
+                { id: 'entertainment', name: 'Lazer', icon: 'fa-film' },
+                { id: 'education', name: 'Educação', icon: 'fa-graduation-cap' },
+                { id: 'shopping', name: 'Compras', icon: 'fa-shopping-bag' },
+                { id: 'personal', name: 'Pessoal', icon: 'fa-user' },
+                { id: 'other_expense', name: 'Outros', icon: 'fa-minus-circle' }
+            ]
+        };
     }
 }
 
 // Inicializar aplicação quando o DOM estiver carregado
 document.addEventListener('DOMContentLoaded', async () => {
-    const app = new FinControlApp();
-    await app.init();
-    window.app = app;
+    console.log('DOM carregado, inicializando aplicação...');
+    try {
+        const app = new FinControlApp();
+        await app.init();
+        window.app = app;
+        
+        // Adicionar função de fallback diretamente no objeto window
+        window.debugNavigate = function(route) {
+            console.log(`Navegação de depuração para ${route}`);
+            
+            // Verificar se a aplicação está inicializada
+            if (!window.app || !window.app._initialized) {
+                console.warn('Aplicação não está completamente inicializada');
+            }
+            
+            // Tentar vários métodos de navegação
+            
+            // 1. Usar o router via singletonManager
+            const router = singletonManager.get('router');
+            if (router) {
+                console.log('Tentando navegação via Router');
+                try {
+                    router.navigate(route);
+                    return;
+                } catch (e) {
+                    console.error('Falha ao navegar via Router:', e);
+                }
+            }
+            
+            // 2. Tentar alterar página diretamente
+            console.log('Tentando navegação direta via DOM');
+            const allPages = document.querySelectorAll('.page');
+            const targetPage = document.getElementById(`${route}Page`);
+            
+            if (allPages.length > 0 && targetPage) {
+                allPages.forEach(page => page.classList.remove('active'));
+                targetPage.classList.add('active');
+                
+                // Atualizar links ativos
+                document.querySelectorAll('a[data-route]').forEach(link => {
+                    if (link.getAttribute('data-route') === route) {
+                        link.classList.add('active');
+                    } else {
+                        link.classList.remove('active');
+                    }
+                });
+                
+                console.log(`Navegação direta para ${route} bem-sucedida`);
+                return;
+            }
+            
+            console.error(`Navegação falhou. Não foi possível encontrar a página: ${route}`);
+        };
+    } catch (error) {
+        console.error('Erro fatal ao inicializar aplicação:', error);
+        document.body.innerHTML = `
+            <div class="error-container" style="padding: 2rem; text-align: center; margin: 2rem auto; max-width: 600px; background: #fff; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.1);">
+                <h2 style="color: #e74c3c;">Erro ao Inicializar Aplicação</h2>
+                <p>Ocorreu um erro ao carregar a aplicação. Por favor, tente novamente.</p>
+                <pre style="text-align: left; background: #f8f8f8; padding: 1rem; border-radius: 4px; overflow: auto;">${error.message}</pre>
+                <button onclick="window.location.reload()" style="background: #3498db; color: white; border: none; padding: 0.75rem 1.5rem; border-radius: 4px; cursor: pointer; margin-top: 1rem;">Recarregar Página</button>
+            </div>
+        `;
+    }
 });
 
 // Exportar classe para uso em outros módulos

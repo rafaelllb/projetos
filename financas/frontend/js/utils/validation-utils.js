@@ -2,85 +2,98 @@
 // Utilitários para validação de dados
 
 /**
- * Classe com métodos utilitários para validação de dados
+ * Objeto com métodos utilitários para validação de dados
  */
-export class ValidationUtils {
+export const validationUtils = {
     /**
      * Verifica se um valor é nulo ou indefinido
      * @param {any} value - Valor a verificar
      * @returns {boolean} - Se o valor é nulo ou indefinido
      */
-    static isNullOrUndefined(value) {
+    isNullOrUndefined(value) {
         return value === null || value === undefined;
-    }
+    },
     
     /**
      * Verifica se uma string está vazia
      * @param {string} value - String a verificar
      * @returns {boolean} - Se a string está vazia
      */
-    static isEmptyString(value) {
+    isEmptyString(value) {
         return typeof value === 'string' && value.trim() === '';
-    }
+    },
+    
+    /**
+     * Verifica se uma string é válida (não vazia)
+     * @param {any} value - Valor a ser validado
+     * @returns {boolean} - Resultado da validação
+     */
+    isValidString(value) {
+        return typeof value === 'string' && value.trim() !== '';
+    },
     
     /**
      * Verifica se um valor é um número válido
      * @param {any} value - Valor a verificar
+     * @param {Object} options - Opções de validação
+     * @param {number} options.min - Valor mínimo permitido
+     * @param {number} options.max - Valor máximo permitido
      * @returns {boolean} - Se o valor é um número válido
      */
-    static isValidNumber(value) {
+    isValidNumber(value, options = {}) {
+        // Validar se é um número
         if (typeof value === 'number') {
-            return !isNaN(value) && isFinite(value);
-        }
-        
-        if (typeof value === 'string') {
+            if (isNaN(value) || !isFinite(value)) {
+                return false;
+            }
+        } else if (typeof value === 'string') {
+            // Tentar converter string para número
             const parsed = parseFloat(value.replace(',', '.'));
-            return !isNaN(parsed) && isFinite(parsed);
+            if (isNaN(parsed) || !isFinite(parsed)) {
+                return false;
+            }
+            // Usar o valor convertido para verificações adicionais
+            value = parsed;
+        } else {
+            return false;
         }
         
-        return false;
-    }
+        // Verificar limites, se especificados
+        if (options.min !== undefined && value < options.min) {
+            return false;
+        }
+        
+        if (options.max !== undefined && value > options.max) {
+            return false;
+        }
+        
+        return true;
+    },
     
     /**
      * Verifica se um valor é um número positivo
      * @param {any} value - Valor a verificar
      * @returns {boolean} - Se o valor é um número positivo
      */
-    static isPositiveNumber(value) {
-        if (!this.isValidNumber(value)) {
-            return false;
-        }
-        
-        const parsed = typeof value === 'string' 
-            ? parseFloat(value.replace(',', '.')) 
-            : value;
-            
-        return parsed > 0;
-    }
+    isPositiveNumber(value) {
+        return this.isValidNumber(value, { min: 0.000001 });
+    },
     
     /**
      * Verifica se um valor é zero ou positivo
      * @param {any} value - Valor a verificar
      * @returns {boolean} - Se o valor é zero ou positivo
      */
-    static isZeroOrPositive(value) {
-        if (!this.isValidNumber(value)) {
-            return false;
-        }
-        
-        const parsed = typeof value === 'string' 
-            ? parseFloat(value.replace(',', '.')) 
-            : value;
-            
-        return parsed >= 0;
-    }
+    isZeroOrPositive(value) {
+        return this.isValidNumber(value, { min: 0 });
+    },
     
     /**
      * Verifica se uma data é válida
      * @param {string|Date} date - Data a verificar
      * @returns {boolean} - Se a data é válida
      */
-    static isValidDate(date) {
+    isValidDate(date) {
         if (!date) {
             return false;
         }
@@ -96,14 +109,14 @@ export class ValidationUtils {
         }
         
         return false;
-    }
+    },
     
     /**
      * Verifica se um e-mail é válido
      * @param {string} email - E-mail a verificar
      * @returns {boolean} - Se o e-mail é válido
      */
-    static isValidEmail(email) {
+    isValidEmail(email) {
         if (this.isNullOrUndefined(email) || this.isEmptyString(email)) {
             return false;
         }
@@ -111,7 +124,7 @@ export class ValidationUtils {
         // Expressão regular para validação básica de e-mail
         const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
         return emailRegex.test(email);
-    }
+    },
     
     /**
      * Verifica se uma senha atende aos requisitos mínimos
@@ -123,7 +136,7 @@ export class ValidationUtils {
      * @param {boolean} options.requireUppercase - Se deve exigir letras maiúsculas (padrão: false)
      * @returns {boolean} - Se a senha atende aos requisitos
      */
-    static isValidPassword(password, options = {}) {
+    isValidPassword(password, options = {}) {
         const defaultOptions = {
             minLength: 6,
             requireNumbers: false,
@@ -158,7 +171,7 @@ export class ValidationUtils {
         }
         
         return true;
-    }
+    },
     
     /**
      * Verifica se uma string atende a um comprimento mínimo
@@ -166,13 +179,13 @@ export class ValidationUtils {
      * @param {number} minLength - Comprimento mínimo
      * @returns {boolean} - Se a string atende ao comprimento mínimo
      */
-    static hasMinLength(value, minLength) {
+    hasMinLength(value, minLength) {
         if (this.isNullOrUndefined(value) || typeof value !== 'string') {
             return false;
         }
         
         return value.length >= minLength;
-    }
+    },
     
     /**
      * Verifica se uma string não excede um comprimento máximo
@@ -180,20 +193,20 @@ export class ValidationUtils {
      * @param {number} maxLength - Comprimento máximo
      * @returns {boolean} - Se a string não excede o comprimento máximo
      */
-    static hasMaxLength(value, maxLength) {
+    hasMaxLength(value, maxLength) {
         if (this.isNullOrUndefined(value) || typeof value !== 'string') {
             return false;
         }
         
         return value.length <= maxLength;
-    }
+    },
     
     /**
      * Verifica se um CPF é válido
      * @param {string} cpf - CPF a verificar
      * @returns {boolean} - Se o CPF é válido
      */
-    static isValidCPF(cpf) {
+    isValidCPF(cpf) {
         if (this.isNullOrUndefined(cpf) || this.isEmptyString(cpf)) {
             return false;
         }
@@ -245,7 +258,7 @@ export class ValidationUtils {
         }
         
         return true;
-    }
+    },
     
     /**
      * Valida um objeto usando schema simples
@@ -253,7 +266,7 @@ export class ValidationUtils {
      * @param {Object} schema - Schema com regras de validação
      * @returns {Object} - Resultado da validação { isValid, errors }
      */
-    static validateObject(obj, schema) {
+    validateObject(obj, schema) {
         if (!obj || !schema) {
             return {
                 isValid: false,
@@ -375,4 +388,61 @@ export class ValidationUtils {
         
         return { isValid, errors };
     }
+};
+
+// Exportando também a versão de classe para compatibilidade com código legado
+export class ValidationUtils {
+    static isNullOrUndefined(value) {
+        return validationUtils.isNullOrUndefined(value);
+    }
+    
+    static isEmptyString(value) {
+        return validationUtils.isEmptyString(value);
+    }
+    
+    static isValidString(value) {
+        return validationUtils.isValidString(value);
+    }
+    
+    static isValidNumber(value, options = {}) {
+        return validationUtils.isValidNumber(value, options);
+    }
+    
+    static isPositiveNumber(value) {
+        return validationUtils.isPositiveNumber(value);
+    }
+    
+    static isZeroOrPositive(value) {
+        return validationUtils.isZeroOrPositive(value);
+    }
+    
+    static isValidDate(date) {
+        return validationUtils.isValidDate(date);
+    }
+    
+    static isValidEmail(email) {
+        return validationUtils.isValidEmail(email);
+    }
+    
+    static isValidPassword(password, options = {}) {
+        return validationUtils.isValidPassword(password, options);
+    }
+    
+    static hasMinLength(value, minLength) {
+        return validationUtils.hasMinLength(value, minLength);
+    }
+    
+    static hasMaxLength(value, maxLength) {
+        return validationUtils.hasMaxLength(value, maxLength);
+    }
+    
+    static isValidCPF(cpf) {
+        return validationUtils.isValidCPF(cpf);
+    }
+    
+    static validateObject(obj, schema) {
+        return validationUtils.validateObject(obj, schema);
+    }
 }
+
+export default validationUtils;

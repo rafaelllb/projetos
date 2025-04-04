@@ -2,15 +2,15 @@
 // Utilitários para sanitização de dados
 
 /**
- * Classe com métodos utilitários para sanitização de dados
+ * Objeto com métodos utilitários para sanitização de dados
  */
-export class SanitizeUtils {
+export const sanitizeUtils = {
     /**
      * Sanitiza texto removendo tags HTML e scripts
      * @param {string} text - Texto a ser sanitizado
      * @returns {string} - Texto sanitizado
      */
-    static sanitizeText(text) {
+    sanitizeText(text) {
         if (typeof text !== 'string') {
             return '';
         }
@@ -20,14 +20,14 @@ export class SanitizeUtils {
             .replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '')
             .replace(/<[^>]*>/g, '')
             .trim();
-    }
+    },
     
     /**
      * Sanitiza HTML preservando tags seguras
      * @param {string} html - HTML a ser sanitizado
      * @returns {string} - HTML sanitizado
      */
-    static sanitizeHTML(html) {
+    sanitizeHTML(html) {
         if (typeof html !== 'string') {
             return '';
         }
@@ -39,14 +39,14 @@ export class SanitizeUtils {
             .replace(/on\w+\s*=\s*["']?[^"']*["']?/gi, '')
             .replace(/data-\w+\s*=\s*["']?[^"']*["']?/gi, '')
             .trim();
-    }
+    },
     
     /**
      * Sanitiza objeto removendo tags HTML e scripts de propriedades string
      * @param {Object} obj - Objeto a ser sanitizado
      * @returns {Object} - Objeto sanitizado
      */
-    static sanitizeObject(obj) {
+    sanitizeObject(obj) {
         if (!obj || typeof obj !== 'object') {
             return obj;
         }
@@ -69,7 +69,7 @@ export class SanitizeUtils {
         }
         
         return sanitized;
-    }
+    },
     
     /**
      * Sanitiza valores numéricos
@@ -80,7 +80,7 @@ export class SanitizeUtils {
      * @param {number} options.default - Valor padrão se inválido
      * @returns {number} - Valor numérico sanitizado
      */
-    static sanitizeNumber(value, options = {}) {
+    sanitizeNumber(value, options = {}) {
         // Definir opções padrão
         const defaultOptions = {
             min: Number.MIN_SAFE_INTEGER,
@@ -109,7 +109,7 @@ export class SanitizeUtils {
         
         // Aplicar limites
         return Math.min(Math.max(num, opts.min), opts.max);
-    }
+    },
     
     /**
      * Sanitiza uma data
@@ -120,7 +120,7 @@ export class SanitizeUtils {
      * @param {Date} options.default - Data padrão se inválida
      * @returns {Date} - Data sanitizada
      */
-    static sanitizeDate(value, options = {}) {
+    sanitizeDate(value, options = {}) {
         // Definir opções padrão
         const defaultOptions = {
             min: new Date(1900, 0, 1),
@@ -156,14 +156,14 @@ export class SanitizeUtils {
         }
         
         return date;
-    }
+    },
     
     /**
      * Sanitiza um e-mail
      * @param {string} email - E-mail a ser sanitizado
      * @returns {string} - E-mail sanitizado
      */
-    static sanitizeEmail(email) {
+    sanitizeEmail(email) {
         if (typeof email !== 'string') {
             return '';
         }
@@ -175,7 +175,7 @@ export class SanitizeUtils {
         const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
         
         return emailRegex.test(sanitized) ? sanitized : '';
-    }
+    },
     
     /**
      * Sanitiza uma URL
@@ -185,7 +185,7 @@ export class SanitizeUtils {
      * @param {string} options.default - URL padrão se inválida
      * @returns {string} - URL sanitizada
      */
-    static sanitizeURL(url, options = {}) {
+    sanitizeURL(url, options = {}) {
         // Definir opções padrão
         const defaultOptions = {
             allowedProtocols: ['http:', 'https:'],
@@ -214,7 +214,7 @@ export class SanitizeUtils {
             // URL inválida
             return opts.default;
         }
-    }
+    },
     
     /**
      * Sanitiza valores booleanos
@@ -222,7 +222,7 @@ export class SanitizeUtils {
      * @param {boolean} defaultValue - Valor padrão se não for booleano
      * @returns {boolean} - Valor booleano sanitizado
      */
-    static sanitizeBoolean(value, defaultValue = false) {
+    sanitizeBoolean(value, defaultValue = false) {
         if (typeof value === 'boolean') {
             return value;
         }
@@ -243,70 +243,70 @@ export class SanitizeUtils {
         }
         
         return defaultValue;
-    }
+    },
     
     /**
      * Sanitiza um CPF removendo caracteres não numéricos
      * @param {string} cpf - CPF a ser sanitizado
      * @returns {string} - CPF sanitizado
      */
-    static sanitizeCPF(cpf) {
+    sanitizeCPF(cpf) {
         if (typeof cpf !== 'string') {
             return '';
         }
         
         // Remover todos os caracteres não numéricos
         return cpf.replace(/\D/g, '');
-    }
+    },
     
     /**
      * Sanitiza um número de telefone removendo caracteres não numéricos
      * @param {string} phone - Telefone a ser sanitizado
      * @returns {string} - Telefone sanitizado
      */
-    static sanitizePhone(phone) {
+    sanitizePhone(phone) {
         if (typeof phone !== 'string') {
             return '';
         }
         
         // Remover todos os caracteres não numéricos
         return phone.replace(/\D/g, '');
-    }
+    },
     
     /**
      * Sanitiza um CEP removendo caracteres não numéricos
      * @param {string} cep - CEP a ser sanitizado
      * @returns {string} - CEP sanitizado
      */
-    static sanitizeCEP(cep) {
+    sanitizeCEP(cep) {
         if (typeof cep !== 'string') {
             return '';
         }
         
         // Remover todos os caracteres não numéricos
         return cep.replace(/\D/g, '');
-    }
+    },
     
     /**
      * Sanitiza um nome para evitar caracteres inválidos
      * @param {string} name - Nome a ser sanitizado
      * @returns {string} - Nome sanitizado
      */
-    static sanitizeName(name) {
+    sanitizeName(name) {
         if (typeof name !== 'string') {
             return '';
         }
         
         // Remover caracteres especiais, permitindo apenas letras, espaços e alguns caracteres
         return name.replace(/[^\p{L}\p{M}\s\-'.]/gu, '').trim();
-    }
+    },
     
     /**
      * Sanitiza um identificador (ID, slug, etc.)
      * @param {string} id - Identificador a ser sanitizado
      * @returns {string} - Identificador sanitizado
      */
-    static sanitizeIdentifier(id) {
+    sanitizeIdentifier(id) {
         if (typeof id !== 'string') {
             return '';
         }
@@ -314,4 +314,61 @@ export class SanitizeUtils {
         // Remover caracteres especiais, permitindo apenas letras, números, traços e sublinhados
         return id.replace(/[^a-zA-Z0-9\-_]/g, '').trim();
     }
+};
+
+// Exportando também a versão de classe para compatibilidade com código legado
+export class SanitizeUtils {
+    static sanitizeText(text) {
+        return sanitizeUtils.sanitizeText(text);
+    }
+    
+    static sanitizeHTML(html) {
+        return sanitizeUtils.sanitizeHTML(html);
+    }
+    
+    static sanitizeObject(obj) {
+        return sanitizeUtils.sanitizeObject(obj);
+    }
+    
+    static sanitizeNumber(value, options = {}) {
+        return sanitizeUtils.sanitizeNumber(value, options);
+    }
+    
+    static sanitizeDate(value, options = {}) {
+        return sanitizeUtils.sanitizeDate(value, options);
+    }
+    
+    static sanitizeEmail(email) {
+        return sanitizeUtils.sanitizeEmail(email);
+    }
+    
+    static sanitizeURL(url, options = {}) {
+        return sanitizeUtils.sanitizeURL(url, options);
+    }
+    
+    static sanitizeBoolean(value, defaultValue = false) {
+        return sanitizeUtils.sanitizeBoolean(value, defaultValue);
+    }
+    
+    static sanitizeCPF(cpf) {
+        return sanitizeUtils.sanitizeCPF(cpf);
+    }
+    
+    static sanitizePhone(phone) {
+        return sanitizeUtils.sanitizePhone(phone);
+    }
+    
+    static sanitizeCEP(cep) {
+        return sanitizeUtils.sanitizeCEP(cep);
+    }
+    
+    static sanitizeName(name) {
+        return sanitizeUtils.sanitizeName(name);
+    }
+    
+    static sanitizeIdentifier(id) {
+        return sanitizeUtils.sanitizeIdentifier(id);
+    }
 }
+
+export default sanitizeUtils;

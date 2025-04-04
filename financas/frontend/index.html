@@ -10,6 +10,9 @@
     <link rel="stylesheet" href="css/components.css">
     <link rel="stylesheet" href="css/dashboard.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
 </head>
 <body>
@@ -21,11 +24,11 @@
             </div>
             <nav class="main-nav">
                 <ul>
-                    <li><a href="#" class="active" data-page="dashboard"><i class="fas fa-chart-line"></i> Dashboard</a></li>
-                    <li><a href="#" data-page="transactions"><i class="fas fa-exchange-alt"></i> Transações</a></li>
-                    <li><a href="#" data-page="budgets"><i class="fas fa-piggy-bank"></i> Orçamentos</a></li>
-                    <li><a href="#" data-page="goals"><i class="fas fa-bullseye"></i> Metas</a></li>
-                    <li><a href="#" data-page="reports"><i class="fas fa-file-alt"></i> Relatórios</a></li>
+                    <li><a href="javascript:void(0);" class="active" data-route="dashboard"><i class="fas fa-chart-line"></i> <span>Dashboard</span></a></li>
+                    <li><a href="javascript:void(0);" data-route="transactions"><i class="fas fa-exchange-alt"></i> <span>Transações</span></a></li>
+                    <li><a href="javascript:void(0);" data-route="budgets"><i class="fas fa-piggy-bank"></i> <span>Orçamentos</span></a></li>
+                    <li><a href="javascript:void(0);" data-route="goals"><i class="fas fa-bullseye"></i> <span>Metas</span></a></li>
+                    <li><a href="javascript:void(0);" data-route="reports"><i class="fas fa-file-alt"></i> <span>Relatórios</span></a></li>
                 </ul>
             </nav>
             <div class="user-menu">
@@ -34,9 +37,9 @@
                     <i class="fas fa-chevron-down"></i>
                 </div>
                 <div class="dropdown-menu hidden" id="userDropdown">
-                    <a href="#" data-page="profile"><i class="fas fa-user"></i> Perfil</a>
-                    <a href="#" data-page="settings"><i class="fas fa-cog"></i> Configurações</a>
-                    <a href="#" id="logoutBtn"><i class="fas fa-sign-out-alt"></i> Sair</a>
+                    <a href="javascript:void(0);" data-route="profile"><i class="fas fa-user"></i> Perfil</a>
+                    <a href="javascript:void(0);" data-route="settings"><i class="fas fa-cog"></i> Configurações</a>
+                    <a href="pages/login.html" id="logoutBtn"><i class="fas fa-sign-out-alt"></i> Sair</a>
                 </div>
             </div>
         </header>
@@ -46,67 +49,215 @@
             <div id="pageContainer">
                 <!-- Dashboard será carregado aqui por padrão -->
                 <section id="dashboardPage" class="page active">
-                    <h2>Dashboard Financeiro</h2>
+                    <div class="page-header">
+                        <h2>Dashboard Financeiro</h2>
+                        <div class="period-selector">
+                            <label for="periodSelect">Período:</label>
+                            <select id="periodSelect" class="period-select">
+                                <option value="month">Este Mês</option>
+                                <option value="quarter">Este Trimestre</option>
+                                <option value="year">Este Ano</option>
+                                <option value="custom">Personalizado</option>
+                            </select>
+                        </div>
+                    </div>
                     
                     <div class="dashboard-grid">
                         <!-- Resumo Financeiro -->
-                        <div class="dashboard-card summary-card">
-                            <h3>Resumo do Mês</h3>
+                        <div class="dashboard-card half-width">
+                            <h3><i class="fas fa-money-bill-wave"></i> Resumo do Mês</h3>
                             <div class="financial-summary">
                                 <div class="summary-item">
                                     <span class="label">Receitas</span>
-                                    <span class="value income" id="monthlyIncome">R$ 0,00</span>
+                                    <span class="value income" id="monthlyIncome">R$ 5.250,00</span>
+                                    <span class="trend up"><i class="fas fa-arrow-up"></i> 12%</span>
                                 </div>
                                 <div class="summary-item">
                                     <span class="label">Despesas</span>
-                                    <span class="value expense" id="monthlyExpense">R$ 0,00</span>
+                                    <span class="value expense" id="monthlyExpense">R$ 3.420,50</span>
+                                    <span class="trend down"><i class="fas fa-arrow-down"></i> 5%</span>
                                 </div>
                                 <div class="summary-item">
                                     <span class="label">Saldo</span>
-                                    <span class="value" id="monthlyBalance">R$ 0,00</span>
+                                    <span class="value income" id="monthlyBalance">R$ 1.829,50</span>
+                                    <span class="trend up"><i class="fas fa-arrow-up"></i> 22%</span>
                                 </div>
                             </div>
                         </div>
                         
-                        <!-- Gráfico de Despesas por Categoria -->
-                        <div class="dashboard-card">
-                            <h3>Despesas por Categoria</h3>
+                        <!-- Visão Geral -->
+                        <div class="dashboard-card half-width">
+                            <h3><i class="fas fa-chart-pie"></i> Visão Geral</h3>
+                            <div class="chart-container">
+                                <canvas id="overviewChart"></canvas>
+                            </div>
+                        </div>
+                        
+                        <!-- Despesas por Categoria -->
+                        <div class="dashboard-card half-width">
+                            <h3><i class="fas fa-tags"></i> Despesas por Categoria</h3>
                             <div class="chart-container">
                                 <canvas id="expensesByCategoryChart"></canvas>
                             </div>
                         </div>
                         
                         <!-- Fluxo de Caixa -->
-                        <div class="dashboard-card">
-                            <h3>Fluxo de Caixa</h3>
+                        <div class="dashboard-card half-width">
+                            <h3><i class="fas fa-chart-line"></i> Fluxo de Caixa</h3>
                             <div class="chart-container">
                                 <canvas id="cashFlowChart"></canvas>
                             </div>
                         </div>
                         
                         <!-- Metas de Economia -->
-                        <div class="dashboard-card">
-                            <h3>Metas de Economia</h3>
+                        <div class="dashboard-card half-width">
+                            <h3><i class="fas fa-bullseye"></i> Metas de Economia</h3>
                             <div class="goals-list" id="savingGoalsList">
                                 <!-- Metas serão carregadas dinamicamente -->
-                                <div class="empty-state">
-                                    <i class="fas fa-bullseye"></i>
-                                    <p>Você não tem metas definidas</p>
-                                    <button class="btn btn-primary" id="addGoalBtn">Adicionar Meta</button>
+                                <div class="goal-item">
+                                    <div class="goal-info">
+                                        <div class="goal-name"><i class="fas fa-home"></i> Entrada Apartamento</div>
+                                        <div class="goal-amount">R$ 15.000 / R$ 50.000</div>
+                                    </div>
+                                    <div class="goal-progress-bar">
+                                        <div class="goal-progress-fill" style="width: 30%"></div>
+                                    </div>
+                                    <div class="goal-meta">
+                                        <span>30% concluído</span>
+                                        <span>Prazo: Dez 2025</span>
+                                    </div>
+                                </div>
+                                <div class="goal-item">
+                                    <div class="goal-info">
+                                        <div class="goal-name"><i class="fas fa-plane"></i> Viagem</div>
+                                        <div class="goal-amount">R$ 4.500 / R$ 6.000</div>
+                                    </div>
+                                    <div class="goal-progress-bar">
+                                        <div class="goal-progress-fill" style="width: 75%"></div>
+                                    </div>
+                                    <div class="goal-meta">
+                                        <span>75% concluído</span>
+                                        <span>Prazo: Jul 2025</span>
+                                    </div>
+                                </div>
+                                <button class="btn btn-primary btn-sm mt-md" id="addGoalBtn">
+                                    <i class="fas fa-plus"></i> Adicionar Meta
+                                </button>
+                            </div>
+                        </div>
+                        
+                        <!-- Lembretes e Alertas -->
+                        <div class="dashboard-card half-width">
+                            <h3><i class="fas fa-bell"></i> Lembretes e Alertas</h3>
+                            <div class="notification-list">
+                                <div class="notification-item">
+                                    <div class="notification-icon">
+                                        <i class="fas fa-exclamation-triangle"></i>
+                                    </div>
+                                    <div class="notification-content">
+                                        <div class="notification-text">Conta de Internet vence em 3 dias</div>
+                                        <div class="notification-time">Valor: R$ 120,00</div>
+                                    </div>
+                                </div>
+                                <div class="notification-item">
+                                    <div class="notification-icon">
+                                        <i class="fas fa-chart-line"></i>
+                                    </div>
+                                    <div class="notification-content">
+                                        <div class="notification-text">Categoria "Alimentação" acima do orçamento</div>
+                                        <div class="notification-time">105% utilizado</div>
+                                    </div>
+                                </div>
+                                <div class="notification-item">
+                                    <div class="notification-icon">
+                                        <i class="fas fa-piggy-bank"></i>
+                                    </div>
+                                    <div class="notification-content">
+                                        <div class="notification-text">Poupança automática agendada para amanhã</div>
+                                        <div class="notification-time">Valor: R$ 300,00</div>
+                                    </div>
                                 </div>
                             </div>
                         </div>
                         
                         <!-- Últimas Transações -->
-                        <div class="dashboard-card wide-card">
-                            <h3>Últimas Transações</h3>
+                        <div class="dashboard-card full-width">
+                            <h3><i class="fas fa-receipt"></i> Últimas Transações</h3>
                             <div class="transactions-list" id="recentTransactionsList">
                                 <!-- Transações serão carregadas dinamicamente -->
-                                <div class="empty-state">
-                                    <i class="fas fa-receipt"></i>
-                                    <p>Nenhuma transação registrada</p>
-                                    <button class="btn btn-primary" id="addTransactionBtn">Adicionar Transação</button>
+                                <div class="transaction-item">
+                                    <div class="transaction-icon income">
+                                        <i class="fas fa-money-bill-wave"></i>
+                                    </div>
+                                    <div class="transaction-details">
+                                        <div class="transaction-description">Salário</div>
+                                        <div class="transaction-category">
+                                            <span class="chip">Receitas Fixas</span>
+                                        </div>
+                                    </div>
+                                    <div class="transaction-amount income">+ R$ 5.000,00</div>
+                                    <div class="transaction-date">05/04/2025</div>
                                 </div>
+                                <div class="transaction-item">
+                                    <div class="transaction-icon expense">
+                                        <i class="fas fa-home"></i>
+                                    </div>
+                                    <div class="transaction-details">
+                                        <div class="transaction-description">Aluguel</div>
+                                        <div class="transaction-category">
+                                            <span class="chip">Moradia</span>
+                                        </div>
+                                    </div>
+                                    <div class="transaction-amount expense">- R$ 1.500,00</div>
+                                    <div class="transaction-date">03/04/2025</div>
+                                </div>
+                                <div class="transaction-item">
+                                    <div class="transaction-icon expense">
+                                        <i class="fas fa-utensils"></i>
+                                    </div>
+                                    <div class="transaction-details">
+                                        <div class="transaction-description">Mercado</div>
+                                        <div class="transaction-category">
+                                            <span class="chip">Alimentação</span>
+                                        </div>
+                                    </div>
+                                    <div class="transaction-amount expense">- R$ 320,50</div>
+                                    <div class="transaction-date">02/04/2025</div>
+                                </div>
+                                <div class="transaction-item">
+                                    <div class="transaction-icon expense">
+                                        <i class="fas fa-car"></i>
+                                    </div>
+                                    <div class="transaction-details">
+                                        <div class="transaction-description">Combustível</div>
+                                        <div class="transaction-category">
+                                            <span class="chip">Transporte</span>
+                                        </div>
+                                    </div>
+                                    <div class="transaction-amount expense">- R$ 180,00</div>
+                                    <div class="transaction-date">01/04/2025</div>
+                                </div>
+                                <div class="transaction-item">
+                                    <div class="transaction-icon income">
+                                        <i class="fas fa-gift"></i>
+                                    </div>
+                                    <div class="transaction-details">
+                                        <div class="transaction-description">Freelance</div>
+                                        <div class="transaction-category">
+                                            <span class="chip">Receitas Extras</span>
+                                        </div>
+                                    </div>
+                                    <div class="transaction-amount income">+ R$ 250,00</div>
+                                    <div class="transaction-date">29/03/2025</div>
+                                </div>
+                            </div>
+                            <div class="card-footer">
+                                <button class="btn btn-primary btn-sm" id="addTransactionBtn">
+                                    <i class="fas fa-plus"></i> Nova Transação
+                                </button>
+                                <button class="btn btn-secondary btn-sm" id="viewAllTransactionsBtn" data-route="transactions">
+                                    <i class="fas fa-list"></i> Ver Todas
+                                </button>
                             </div>
                         </div>
                     </div>
@@ -118,7 +269,7 @@
         <div class="modal" id="addTransactionModal">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h3>Nova Transação</h3>
+                    <h3><i class="fas fa-plus-circle"></i> Nova Transação</h3>
                     <button class="close-modal">&times;</button>
                 </div>
                 <div class="modal-body">
@@ -132,11 +283,11 @@
                         </div>
                         <div class="form-group">
                             <label for="transactionDescription">Descrição</label>
-                            <input type="text" id="transactionDescription" required>
+                            <input type="text" id="transactionDescription" placeholder="Ex: Salário, Mercado, etc." required>
                         </div>
                         <div class="form-group">
                             <label for="transactionAmount">Valor (R$)</label>
-                            <input type="number" id="transactionAmount" min="0.01" step="0.01" required>
+                            <input type="number" id="transactionAmount" min="0.01" step="0.01" placeholder="0.00" required>
                         </div>
                         <div class="form-group">
                             <label for="transactionCategory">Categoria</label>
@@ -148,9 +299,65 @@
                             <label for="transactionDate">Data</label>
                             <input type="date" id="transactionDate" required>
                         </div>
+                        <div class="form-group">
+                            <label for="transactionNotes">Observações (opcional)</label>
+                            <textarea id="transactionNotes" rows="3" placeholder="Adicione detalhes adicionais"></textarea>
+                        </div>
                         <div class="form-actions">
-                            <button type="submit" class="btn btn-primary">Salvar</button>
-                            <button type="button" class="btn btn-secondary close-modal">Cancelar</button>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-save"></i> Salvar
+                            </button>
+                            <button type="button" class="btn btn-secondary close-modal">
+                                <i class="fas fa-times"></i> Cancelar
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <div class="modal" id="addGoalModal">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h3><i class="fas fa-bullseye"></i> Nova Meta</h3>
+                    <button class="close-modal">&times;</button>
+                </div>
+                <div class="modal-body">
+                    <form id="goalForm">
+                        <div class="form-group">
+                            <label for="goalName">Nome da Meta</label>
+                            <input type="text" id="goalName" placeholder="Ex: Viagem, Entrada Casa, etc." required>
+                        </div>
+                        <div class="form-group">
+                            <label for="goalIcon">Ícone</label>
+                            <select id="goalIcon" required>
+                                <option value="fa-home">Casa</option>
+                                <option value="fa-car">Carro</option>
+                                <option value="fa-plane">Viagem</option>
+                                <option value="fa-graduation-cap">Educação</option>
+                                <option value="fa-laptop">Tecnologia</option>
+                                <option value="fa-piggy-bank">Reserva</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="goalAmount">Valor Total (R$)</label>
+                            <input type="number" id="goalAmount" min="1" step="0.01" placeholder="0.00" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="goalCurrent">Valor Atual (R$)</label>
+                            <input type="number" id="goalCurrent" min="0" step="0.01" placeholder="0.00" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="goalDate">Data Limite</label>
+                            <input type="date" id="goalDate" required>
+                        </div>
+                        <div class="form-actions">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-save"></i> Salvar
+                            </button>
+                            <button type="button" class="btn btn-secondary close-modal">
+                                <i class="fas fa-times"></i> Cancelar
+                            </button>
                         </div>
                     </form>
                 </div>

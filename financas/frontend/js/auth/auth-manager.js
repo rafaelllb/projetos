@@ -1,15 +1,18 @@
 // /frontend/js/auth/auth-manager.js
 // Gerenciador de autenticação da aplicação
 
+import { StorageManager } from '../storage/storage-manager.js';
+
 /**
  * Classe responsável por gerenciar a autenticação e autorização de usuários
  */
 export class AuthManager {
     /**
-     * @param {Object} storageManager - Instância do gerenciador de armazenamento
+     * Construtor do AuthManager
+     * @param {StorageManager} [storageManager] - Instância do gerenciador de armazenamento
      */
     constructor(storageManager) {
-        this.storageManager = storageManager;
+        this.storageManager = storageManager || new StorageManager();
         this.currentUser = null;
         
         // Carregar usuário da sessão
@@ -20,7 +23,12 @@ export class AuthManager {
      * Carrega o usuário da sessão atual
      */
     loadUserFromSession() {
-        this.currentUser = this.storageManager.getUser();
+        try {
+            this.currentUser = this.storageManager.getUser();
+        } catch (error) {
+            console.error('Erro ao carregar usuário da sessão:', error);
+            this.currentUser = null;
+        }
     }
     
     /**
@@ -29,6 +37,22 @@ export class AuthManager {
      */
     isAuthenticated() {
         return !!this.currentUser;
+    }
+    
+    /**
+     * Verifica se é modo demo
+     * @returns {boolean} - Se é modo demo
+     */
+    isDemoMode() {
+        return this.currentUser && this.currentUser.isAnonymous;
+    }
+    
+    /**
+     * Verifica se é usuário premium
+     * @returns {boolean} - Se é usuário premium
+     */
+    isPremiumUser() {
+        return this.currentUser && this.currentUser.isPremium;
     }
     
     /**
@@ -43,9 +67,10 @@ export class AuthManager {
      * Realiza o login do usuário
      * @param {string} email - Email do usuário
      * @param {string} password - Senha do usuário
-     * @returns {Promise<Object>} - Promise que resolve com os dados do usuário
+     * @param {boolean} rememberMe - Se deve lembrar o usuário
+     * @returns {Promise<boolean>} - Promise que resolve com o sucesso do login
      */
-    async login(email, password) {
+    async login(email, password, rememberMe = false) {
         // Sanitizar entradas
         email = this.sanitizeInput(email);
         
@@ -58,12 +83,12 @@ export class AuthManager {
             const user = users.find(u => u.email === email);
             
             if (!user) {
-                throw new Error('Usuário não encontrado');
+                return false;
             }
             
             // Verificar senha
             if (!this.verifyPassword(password, user.passwordHash)) {
-                throw new Error('Senha incorreta');
+                return false;
             }
             
             // Criar cópia do usuário sem a senha
@@ -71,20 +96,20 @@ export class AuthManager {
             delete userWithoutPassword.passwordHash;
             
             // Armazenar usuário na sessão
-            this.storageManager.setUser(userWithoutPassword);
+            this.storageManager.setUser(userWithoutPassword, rememberMe);
             this.currentUser = userWithoutPassword;
             
-            return userWithoutPassword;
+            return true;
         } catch (error) {
             console.error('Erro ao fazer login:', error);
-            throw error;
+            return false;
         }
     }
     
     /**
      * Realiza o registro de um novo usuário
      * @param {Object} userData - Dados do usuário
-     * @returns {Promise<Object>} - Promise que resolve com os dados do usuário
+     * @returns {Promise<boolean>} - Promise que resolve com o sucesso do registro
      */
     async register(userData) {
         // Sanitizar entradas
@@ -101,7 +126,7 @@ export class AuthManager {
             // Verificar se o email já está em uso
             const users = this.getLocalUsers();
             if (users.some(u => u.email === userData.email)) {
-                throw new Error('Este email já está em uso');
+                throw new Error('EMAIL_ALREADY_EXISTS');
             }
             
             // Gerar hash da senha
@@ -128,7 +153,7 @@ export class AuthManager {
             this.storageManager.setUser(userWithoutPassword);
             this.currentUser = userWithoutPassword;
             
-            return userWithoutPassword;
+            return true;
         } catch (error) {
             console.error('Erro ao registrar usuário:', error);
             throw error;
@@ -139,23 +164,75 @@ export class AuthManager {
      * Realiza o logout do usuário
      */
     logout() {
-        this.storageManager.setUser(null);
+        this.storageManager.clearAllData();
         this.currentUser = null;
     }
     
     /**
      * Define um usuário anônimo para demonstração
+     * @returns {Promise<boolean>} - Promise que resolve com o sucesso da ativação
      */
+    async activateDemoMode() {
+        const anonymousUser = {
+            id: 'guest',
+            name: 'Convidado',
+            email: 'convidado@exemplo.com',
+            isAnonymous: true,
+            createdAt: new Date().toISOString()
+        };
+        
+        this.storageManager.setUser(anonymousUser);
+        this.currentUser = anonymousUser;
+        
+        // Carregar dados de demonstração
+        await this.storageManager.loadDemoData();
+        
+        return true;
+    }
+
+    /**
+     * Define um usuário anônimo padrão
+     * @returns {Object} - Usuário anônimo
+    */
     setAnonymousUser() {
         const anonymousUser = {
             id: 'guest',
             name: 'Convidado',
             email: 'convidado@exemplo.com',
-            isAnonymous: true
+            isAnonymous: true,
+            createdAt: new Date().toISOString()
         };
         
         this.storageManager.setUser(anonymousUser);
         this.currentUser = anonymousUser;
+        
+        return anonymousUser;
+    }
+    
+    /**
+     * Verifica o estado de autenticação atual
+     * @returns {Promise<boolean>} - Promise que resolve com o status de autenticação
+     */
+    async checkAuthentication() {
+        // Recarregar usuário do armazenamento (localStorage ou sessionStorage)
+        this.loadUserFromSession();
+        
+        // Verificar se o token está expirado (em caso de implementação com JWT)
+        if (this.currentUser && this.isTokenExpired()) {
+            this.logout();
+            return false;
+        }
+        
+        return this.isAuthenticated();
+    }
+    
+    /**
+     * Verifica se o token está expirado
+     * @returns {boolean} - Se o token está expirado
+     */
+    isTokenExpired() {
+        // Simulação - Em uma implementação real, verificaria a expiração do JWT
+        return false;
     }
     
     /**
@@ -221,7 +298,12 @@ export class AuthManager {
      * @returns {Array} - Lista de usuários
      */
     getLocalUsers() {
-        return JSON.parse(localStorage.getItem('fincontrol_users') || '[]');
+        try {
+            return JSON.parse(localStorage.getItem('fincontrol_users') || '[]');
+        } catch (error) {
+            console.error('Erro ao recuperar usuários locais:', error);
+            return [];
+        }
     }
     
     /**
@@ -229,7 +311,11 @@ export class AuthManager {
      * @param {Array} users - Lista de usuários
      */
     saveLocalUsers(users) {
-        localStorage.setItem('fincontrol_users', JSON.stringify(users));
+        try {
+            localStorage.setItem('fincontrol_users', JSON.stringify(users));
+        } catch (error) {
+            console.error('Erro ao salvar usuários locais:', error);
+        }
     }
     
     /**
@@ -301,3 +387,6 @@ export class AuthManager {
         }
     }
 }
+
+// Exportar uma instância singleton
+export const authManager = new AuthManager();

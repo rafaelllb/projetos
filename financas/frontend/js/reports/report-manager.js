@@ -1,8 +1,13 @@
 // /frontend/js/reports/report-manager.js
-// Gerenciador de relatórios financeiros
+// Gerenciador de relatórios financeiros - Refatorado para centralizar gerenciamento de gráficos
+
+import { chartManager } from '../utils/chart-manager.js';
+import { singletonManager } from '../utils/singleton-manager.js';
+import { formatSafeCurrency } from '../utils/currency-utils.js';
 
 /**
  * Classe responsável por gerar relatórios financeiros
+ * Refatorada para delegar gerenciamento de gráficos para chartManager
  */
 export class ReportManager {
     /**
@@ -14,7 +19,9 @@ export class ReportManager {
         this.transactionManager = transactionManager;
         this.budgetManager = budgetManager;
         this.goalsManager = goalsManager;
-        this.charts = {};
+        
+        // Registrar no singletonManager
+        singletonManager.register('reportManager', this);
     }
     
     /**
@@ -153,6 +160,32 @@ export class ReportManager {
             
             categoriesArray.sort((a, b) => b.total - a.total);
             
+            // Preparar dados para gráfico
+            const labels = categoriesArray.map(category => category.name);
+            const values = categoriesArray.map(category => category.total);
+            const backgroundColors = [
+                'rgba(67, 97, 238, 0.8)',
+                'rgba(245, 158, 11, 0.8)',
+                'rgba(16, 185, 129, 0.8)',
+                'rgba(239, 68, 68, 0.8)',
+                'rgba(59, 130, 246, 0.8)',
+                'rgba(107, 114, 128, 0.8)',
+                'rgba(124, 58, 237, 0.8)',
+                'rgba(236, 72, 153, 0.8)',
+                'rgba(52, 211, 153, 0.8)',
+                'rgba(251, 191, 36, 0.8)'
+            ];
+            
+            // Organizar os dados para o gráfico
+            const chartData = {
+                labels: labels,
+                datasets: [{
+                    data: values,
+                    backgroundColor: backgroundColors.slice(0, values.length),
+                    borderWidth: 1
+                }]
+            };
+            
             // Retornar dados do relatório
             return {
                 period: {
@@ -162,7 +195,8 @@ export class ReportManager {
                 totalExpense,
                 categories: categoriesArray,
                 topCategories: categoriesArray.slice(0, 5),
-                otherCategories: categoriesArray.slice(5)
+                otherCategories: categoriesArray.slice(5),
+                chartData
             };
         } catch (error) {
             console.error('Erro ao gerar relatório por categoria:', error);
@@ -245,6 +279,38 @@ export class ReportManager {
             const incomeTrend = this.calculateTrend(monthlyData.map(m => m.income));
             const expenseTrend = this.calculateTrend(monthlyData.map(m => m.expense));
             
+            // Preparar dados para o gráfico
+            const chartData = {
+                labels: monthlyData.map(month => month.label),
+                datasets: [
+                    {
+                        label: 'Receitas',
+                        data: monthlyData.map(month => month.income),
+                        backgroundColor: 'rgba(46, 204, 113, 0.7)',
+                        borderColor: 'rgba(46, 204, 113, 1)',
+                        borderWidth: 1
+                    },
+                    {
+                        label: 'Despesas',
+                        data: monthlyData.map(month => month.expense),
+                        backgroundColor: 'rgba(231, 76, 60, 0.7)',
+                        borderColor: 'rgba(231, 76, 60, 1)',
+                        borderWidth: 1
+                    },
+                    {
+                        type: 'line',
+                        label: 'Saldo',
+                        data: monthlyData.map(month => month.balance),
+                        borderColor: 'rgba(52, 152, 219, 1)',
+                        backgroundColor: 'rgba(52, 152, 219, 0.2)',
+                        borderWidth: 2,
+                        fill: false,
+                        tension: 0.1,
+                        pointRadius: 3
+                    }
+                ]
+            };
+            
             // Retornar dados do relatório
             return {
                 period: {
@@ -265,7 +331,8 @@ export class ReportManager {
                     income: incomeTrend,
                     expense: expenseTrend
                 },
-                data: monthlyData
+                data: monthlyData,
+                chartData
             };
         } catch (error) {
             console.error('Erro ao gerar relatório mensal:', error);
@@ -308,79 +375,35 @@ export class ReportManager {
     }
     
     /**
-     * Renderiza o gráfico de receitas vs despesas
+     * Renderiza o gráfico de receitas vs despesas usando o chartManager
      * @param {HTMLElement} chartContainer - Elemento do canvas para o gráfico
      * @param {Object} reportData - Dados do relatório mensal
      */
-    renderIncomeExpenseChart(chartContainer, reportData) {
-        // Verificar se Chart.js está disponível
-        if (typeof Chart === 'undefined') {
-            console.error('Chart.js não está disponível');
+    displayIncomeExpenseChart(chartContainer, reportData) {
+        if (!chartContainer) {
+            console.warn('Elemento de gráfico não encontrado');
             return;
         }
         
-        const monthlyData = reportData.data;
-        
-        // Preparar dados para o gráfico
-        const labels = monthlyData.map(month => month.label);
-        const incomeData = monthlyData.map(month => month.income);
-        const expenseData = monthlyData.map(month => month.expense);
-        const balanceData = monthlyData.map(month => month.balance);
-        
-        // Criar ou atualizar gráfico
-        if (this.charts.incomeExpense) {
-            this.charts.incomeExpense.data.labels = labels;
-            this.charts.incomeExpense.data.datasets[0].data = incomeData;
-            this.charts.incomeExpense.data.datasets[1].data = expenseData;
-            this.charts.incomeExpense.data.datasets[2].data = balanceData;
-            this.charts.incomeExpense.update();
-        } else {
-            this.charts.incomeExpense = new Chart(chartContainer, {
-                type: 'bar',
-                data: {
-                    labels: labels,
-                    datasets: [
-                        {
-                            label: 'Receitas',
-                            data: incomeData,
-                            backgroundColor: 'rgba(46, 204, 113, 0.7)',
-                            borderColor: 'rgba(46, 204, 113, 1)',
-                            borderWidth: 1
-                        },
-                        {
-                            label: 'Despesas',
-                            data: expenseData,
-                            backgroundColor: 'rgba(231, 76, 60, 0.7)',
-                            borderColor: 'rgba(231, 76, 60, 1)',
-                            borderWidth: 1
-                        },
-                        {
-                            type: 'line',
-                            label: 'Saldo',
-                            data: balanceData,
-                            borderColor: 'rgba(52, 152, 219, 1)',
-                            backgroundColor: 'rgba(52, 152, 219, 0.2)',
-                            borderWidth: 2,
-                            fill: false,
-                            tension: 0.1,
-                            pointRadius: 3
-                        }
-                    ]
-                },
-                options: {
+        try {
+            // Obter ID do elemento para criar o gráfico
+            const chartId = chartContainer.id || 'incomeExpenseChart';
+            
+            // Criar ou atualizar o gráfico usando chartManager
+            chartManager.createOrUpdateChart(
+                chartId,
+                chartId,
+                'bar',
+                reportData.chartData,
+                {
                     responsive: true,
                     maintainAspectRatio: false,
                     scales: {
-                        x: {
-                            grid: {
-                                display: false
-                            }
-                        },
                         y: {
                             beginAtZero: true,
                             ticks: {
                                 callback: function(value) {
-                                    return 'R$ ' + value.toLocaleString('pt-BR');
+                                    return formatSafeCurrency(value, 'BRL', true);
                                 }
                             }
                         }
@@ -389,69 +412,72 @@ export class ReportManager {
                         tooltip: {
                             callbacks: {
                                 label: function(context) {
-                                    const value = context.raw;
-                                    return `${context.dataset.label}: R$ ${value.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`;
+                                    return `${context.dataset.label}: ${formatSafeCurrency(context.raw)}`;
                                 }
                             }
-                        },
-                        legend: {
-                            position: 'top'
                         }
                     }
                 }
-            });
+            );
+        } catch (error) {
+            console.error('Erro ao renderizar gráfico de receitas vs despesas:', error);
+            chartManager.showEmptyChartTemplate(chartContainer.id, 'Erro ao carregar gráfico');
         }
     }
     
     /**
-     * Renderiza o gráfico de despesas por categoria
+     * Renderiza o gráfico de despesas por categoria usando o chartManager
      * @param {HTMLElement} chartContainer - Elemento do canvas para o gráfico
      * @param {Object} reportData - Dados do relatório por categoria
      */
-    renderCategoryExpensesChart(chartContainer, reportData) {
-        // Verificar se Chart.js está disponível
-        if (typeof Chart === 'undefined') {
-            console.error('Chart.js não está disponível');
+    displayCategoryExpensesChart(chartContainer, reportData) {
+        if (!chartContainer) {
+            console.warn('Elemento de gráfico não encontrado');
             return;
         }
         
-        // Preparar dados para o gráfico
-        const topCategories = reportData.topCategories;
-        const labels = topCategories.map(category => category.name);
-        const data = topCategories.map(category => category.total);
-        
-        // Adicionar "Outros" se necessário
-        if (reportData.otherCategories.length > 0) {
-            const otherTotal = reportData.otherCategories.reduce((sum, category) => sum + category.total, 0);
-            if (otherTotal > 0) {
-                labels.push('Outros');
-                data.push(otherTotal);
+        try {
+            // Obter ID do elemento para criar o gráfico
+            const chartId = chartContainer.id || 'categoryExpensesChart';
+            
+            // Adicionar "Outros" se necessário
+            let chartData = { ...reportData.chartData };
+            
+            if (reportData.otherCategories && reportData.otherCategories.length > 0) {
+                const otherTotal = reportData.otherCategories.reduce((sum, category) => sum + category.total, 0);
+                
+                if (otherTotal > 0) {
+                    chartData.labels.push('Outros');
+                    chartData.datasets[0].data.push(otherTotal);
+                    
+                    // Adicionar uma cor adicional para "Outros"
+                    if (chartData.datasets[0].backgroundColor) {
+                        const nextColorIndex = chartData.datasets[0].backgroundColor.length % 10;
+                        const colors = [
+                            'rgba(67, 97, 238, 0.8)',
+                            'rgba(245, 158, 11, 0.8)',
+                            'rgba(16, 185, 129, 0.8)',
+                            'rgba(239, 68, 68, 0.8)',
+                            'rgba(59, 130, 246, 0.8)',
+                            'rgba(107, 114, 128, 0.8)',
+                            'rgba(124, 58, 237, 0.8)',
+                            'rgba(236, 72, 153, 0.8)',
+                            'rgba(52, 211, 153, 0.8)',
+                            'rgba(251, 191, 36, 0.8)'
+                        ];
+                        
+                        chartData.datasets[0].backgroundColor.push(colors[nextColorIndex]);
+                    }
+                }
             }
-        }
-        
-        // Cores para as categorias
-        const backgroundColor = [
-            '#e74c3c', '#3498db', '#2ecc71', '#f39c12', '#9b59b6',
-            '#1abc9c', '#d35400', '#34495e', '#c0392b', '#7f8c8d'
-        ];
-        
-        // Criar ou atualizar gráfico
-        if (this.charts.categoryExpenses) {
-            this.charts.categoryExpenses.data.labels = labels;
-            this.charts.categoryExpenses.data.datasets[0].data = data;
-            this.charts.categoryExpenses.update();
-        } else {
-            this.charts.categoryExpenses = new Chart(chartContainer, {
-                type: 'doughnut',
-                data: {
-                    labels: labels,
-                    datasets: [{
-                        data: data,
-                        backgroundColor: backgroundColor,
-                        borderWidth: 1
-                    }]
-                },
-                options: {
+            
+            // Criar ou atualizar o gráfico usando chartManager
+            chartManager.createOrUpdateChart(
+                chartId,
+                chartId,
+                'doughnut',
+                chartData,
+                {
                     responsive: true,
                     maintainAspectRatio: false,
                     plugins: {
@@ -470,13 +496,16 @@ export class ReportManager {
                                     const value = context.raw;
                                     const total = context.dataset.data.reduce((a, b) => a + b, 0);
                                     const percentage = total > 0 ? ((value / total) * 100).toFixed(1) : 0;
-                                    return `${context.label}: R$ ${value.toLocaleString('pt-BR', { minimumFractionDigits: 2 })} (${percentage}%)`;
+                                    return `${context.label}: ${formatSafeCurrency(value)} (${percentage}%)`;
                                 }
                             }
                         }
                     }
                 }
-            });
+            );
+        } catch (error) {
+            console.error('Erro ao renderizar gráfico de despesas por categoria:', error);
+            chartManager.showEmptyChartTemplate(chartContainer.id, 'Erro ao carregar gráfico');
         }
     }
     
@@ -565,3 +594,6 @@ export class ReportManager {
         return csvContent;
     }
 }
+
+// Exportar a classe
+export default ReportManager;

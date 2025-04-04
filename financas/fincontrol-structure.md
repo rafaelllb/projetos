@@ -22,6 +22,8 @@ fincontrol/
 │   └── js/
 │       ├── app.js
 │       ├── router.js
+│       ├── analytics/
+│       │   └── finance-analytics.js
 │       ├── auth/
 │       │   ├── auth-manager.js
 │       │   ├── login-controller.js
@@ -29,11 +31,16 @@ fincontrol/
 │       ├── budgets/
 │       │   ├── budget-manager.js
 │       │   └── budget-model.js
+│       ├── components/
+│       │   ├── transaction-chart.js
+│       │   └── transaction-insights.js
 │       ├── dashboard/
 │       │   └── dashboard-manager.js
 │       ├── goals/
 │       │   ├── goals-manager.js
 │       │   └── goal-model.js
+│       ├── pwa/
+│       │   └── pwa-integration.js
 │       ├── reports/
 │       │   ├── report-manager.js
 │       │   └── export-service.js
@@ -44,9 +51,11 @@ fincontrol/
 │       │   ├── transaction-model.js
 │       │   └── transaction-validation.js
 │       ├── ui/
-│       │   └── ui-manager.js
+│       │   ├── ui-manager.js
+│       │   └── loading-manager.js
 │       └── utils/
 │           ├── currency-utils.js
+│           ├── data-loader.js
 │           ├── date-utils.js
 │           ├── sanitize-utils.js
 │           └── validation-utils.js

@@ -1,13 +1,18 @@
 // /frontend/js/ui/ui-manager.js
-// Gerenciador de interface do usuário
+// Gerenciador de interface do usuário - Corrigido para usar data-route consistentemente
+
+import { singletonManager } from '../utils/singleton-manager.js';
 
 /**
  * Classe responsável por gerenciar a interface do usuário
  */
 export class UIManager {
     constructor() {
-        this.currentPage = 'dashboard';
+        this.currentRoute = 'dashboard';
         this.activeModals = [];
+        
+        // Registrar no singletonManager
+        singletonManager.register('uiManager', this);
     }
     
     /**
@@ -20,6 +25,8 @@ export class UIManager {
         
         // Configurar handlers para responsividade
         this.setupResponsiveHandlers();
+        
+        console.log('UIManager: inicializado com sucesso');
     }
     
     /**
@@ -117,8 +124,8 @@ export class UIManager {
      * Faz ajustes específicos para layout mobile
      */
     adjustForMobileLayout() {
-        // Ajustar navegação principal
-        const navItems = document.querySelectorAll('.main-nav a');
+        // Ajustar navegação principal - agora usando data-route consistentemente
+        const navItems = document.querySelectorAll('.main-nav a[data-route]');
         navItems.forEach(item => {
             const icon = item.querySelector('i');
             const text = item.textContent.trim();
@@ -140,8 +147,8 @@ export class UIManager {
      * Faz ajustes específicos para layout desktop
      */
     adjustForDesktopLayout() {
-        // Restaurar texto dos itens de navegação
-        const navItems = document.querySelectorAll('.main-nav a');
+        // Restaurar texto dos itens de navegação - agora usando data-route consistentemente
+        const navItems = document.querySelectorAll('.main-nav a[data-route]');
         navItems.forEach(item => {
             const icon = item.querySelector('i');
             
@@ -159,382 +166,330 @@ export class UIManager {
     }
     
     /**
-     * Navega para uma página específica
-     * @param {string} pageName - Nome da página
+     * Navega para uma página específica - MÉTODO REMOVIDO
+     * Agora toda navegação é feita através do Router via data-route
+     * @deprecated Use Router.navigateTo() em vez disso
      */
-    navigateTo(pageName) {
-        // Validar página
-        if (!pageName) {
-            return;
-        }
-        
-        // Atualizar links da navegação
-        document.querySelectorAll('.main-nav a').forEach(link => {
-            if (link.dataset.page === pageName) {
-                link.classList.add('active');
-            } else {
-                link.classList.remove('active');
-            }
-        });
-        
-        // Armazenar página atual
-        this.currentPage = pageName;
-        
-        // Carregar conteúdo da página
-        this.loadPage(pageName);
-    }
-    
-    /**
-     * Carrega o conteúdo de uma página
-     * @param {string} pageName - Nome da página
-     */
-    async loadPage(pageName) {
-        const pageContainer = document.getElementById('pageContainer');
-        
-        if (!pageContainer) {
-            return;
-        }
-        
-        // Verificar se a página já está no DOM
-        const existingPage = document.getElementById(`${pageName}Page`);
-        
-        if (existingPage) {
-            // Ocultar todas as páginas
-            document.querySelectorAll('.page').forEach(page => {
-                page.classList.remove('active');
-            });
-            
-            // Mostrar página selecionada
-            existingPage.classList.add('active');
-            return;
-        }
-        
-        try {
-            // Carregar página via AJAX (simulado para demo)
-            const pageContent = await this.fetchPageContent(pageName);
-            
-            // Criar elemento da página
-            const pageElement = document.createElement('section');
-            pageElement.id = `${pageName}Page`;
-            pageElement.className = 'page';
-            pageElement.innerHTML = pageContent;
-            
-            // Ocultar todas as páginas
-            document.querySelectorAll('.page').forEach(page => {
-                page.classList.remove('active');
-            });
-            
-            // Adicionar nova página
-            pageContainer.appendChild(pageElement);
-            pageElement.classList.add('active');
-            
-            // Inicializar componentes na nova página
-            this.initializePageComponents(pageName);
-        } catch (error) {
-            console.error(`Erro ao carregar página ${pageName}:`, error);
-            this.showError('Erro ao carregar página. Por favor, tente novamente.');
+    navigateTo(routeName) {
+        console.warn('UIManager.navigateTo() está depreciado. Use Router.navigateTo() em vez disso.');
+        // Obter o router do singletonManager
+        const router = singletonManager.get('router');
+        if (router) {
+            router.navigate(routeName);
         }
     }
     
     /**
-     * Busca o conteúdo de uma página (simulado)
+     * Busca o conteúdo de uma página
      * @param {string} pageName - Nome da página
      * @returns {Promise<string>} - Promise com o HTML da página
      */
     async fetchPageContent(pageName) {
-        // Em uma aplicação real, isso faria uma requisição AJAX para buscar o conteúdo
-        // Por simplicidade, estamos retornando templates fixos
+        console.log(`UIManager: Buscando conteúdo da página ${pageName}`);
         
-        // Simular delay de rede
-        await new Promise(resolve => setTimeout(resolve, 300));
+        try {
+            // Em uma aplicação real, isso faria uma requisição AJAX para buscar o conteúdo
+            // Por simplicidade, estamos retornando templates fixos
+            
+            // Simular delay de rede
+            await new Promise(resolve => setTimeout(resolve, 300));
         
-        // Templates básicos para demonstração
-        const templates = {
-            transactions: `
-                <h2>Gerenciar Transações</h2>
-                <div class="page-actions">
-                    <button class="btn btn-primary" id="newTransactionBtn">
-                        <i class="fas fa-plus"></i> Nova Transação
-                    </button>
-                    <div class="filters">
+            // Templates básicos para demonstração
+            const templates = {
+                transactions: `
+                    <h2>Gerenciar Transações</h2>
+                    <div class="page-actions">
+                        <button class="btn btn-primary" id="newTransactionBtn">
+                            <i class="fas fa-plus"></i> Nova Transação
+                        </button>
+                        <div class="filters">
+                            <div class="filter-group">
+                                <label for="filterPeriod">Período</label>
+                                <select id="filterPeriod">
+                                    <option value="month">Este Mês</option>
+                                    <option value="quarter">Este Trimestre</option>
+                                    <option value="year">Este Ano</option>
+                                    <option value="custom">Personalizado</option>
+                                </select>
+                            </div>
+                            <div class="filter-group">
+                                <label for="filterType">Tipo</label>
+                                <select id="filterType">
+                                    <option value="all">Todos</option>
+                                    <option value="income">Receitas</option>
+                                    <option value="expense">Despesas</option>
+                                </select>
+                            </div>
+                            <div class="filter-group">
+                                <label for="filterCategory">Categoria</label>
+                                <select id="filterCategory">
+                                    <option value="all">Todas</option>
+                                    <!-- Categorias serão carregadas dinamicamente -->
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="transactions-table-container">
+                        <table class="data-table transactions-table">
+                            <thead>
+                                <tr>
+                                    <th>Data</th>
+                                    <th>Descrição</th>
+                                    <th>Categoria</th>
+                                    <th>Valor</th>
+                                    <th>Ações</th>
+                                </tr>
+                            </thead>
+                            <tbody id="transactionsTableBody">
+                                <!-- Transações serão carregadas dinamicamente -->
+                                <tr class="empty-row">
+                                    <td colspan="5">Carregando transações...</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    
+                    <div class="pagination">
+                        <button class="btn btn-secondary" id="prevPageBtn" disabled>
+                            <i class="fas fa-chevron-left"></i> Anterior
+                        </button>
+                        <span class="pagination-info">Página <span id="currentPage">1</span> de <span id="totalPages">1</span></span>
+                        <button class="btn btn-secondary" id="nextPageBtn" disabled>
+                            Próxima <i class="fas fa-chevron-right"></i>
+                        </button>
+                    </div>
+                `,
+                budgets: `
+                    <h2>Orçamentos</h2>
+                    <div class="page-actions">
+                        <button class="btn btn-primary" id="newBudgetBtn">
+                            <i class="fas fa-plus"></i> Novo Orçamento
+                        </button>
+                    </div>
+                    
+                    <div class="budget-overview">
+                        <div class="progress-card">
+                            <h3>Orçamento do Mês</h3>
+                            <div class="progress-bar">
+                                <div class="progress-bar-fill" style="width: 65%"></div>
+                            </div>
+                            <div class="progress-info">
+                                <span>65% utilizado</span>
+                                <span>R$ 3.250,00 / R$ 5.000,00</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="budget-categories">
+                        <h3>Categorias</h3>
+                        <div class="budget-cards">
+                            <!-- Orçamentos por categoria serão carregados dinamicamente -->
+                            <div class="empty-state">
+                                <i class="fas fa-piggy-bank"></i>
+                                <p>Você não definiu orçamentos por categoria</p>
+                                <button class="btn btn-primary" id="addCategoryBudgetBtn">Adicionar Categoria</button>
+                            </div>
+                        </div>
+                    </div>
+                `,
+                goals: `
+                    <h2>Metas Financeiras</h2>
+                    <div class="page-actions">
+                        <button class="btn btn-primary" id="newGoalBtn">
+                            <i class="fas fa-plus"></i> Nova Meta
+                        </button>
+                    </div>
+                    
+                    <div class="goals-grid">
+                        <!-- Metas serão carregadas dinamicamente -->
+                        <div class="empty-state">
+                            <i class="fas fa-bullseye"></i>
+                            <p>Você não tem metas definidas</p>
+                            <button class="btn btn-primary" id="addFirstGoalBtn">Adicionar Meta</button>
+                        </div>
+                    </div>
+                `,
+                reports: `
+                    <h2>Relatórios</h2>
+                    
+                    <div class="report-filters">
                         <div class="filter-group">
-                            <label for="filterPeriod">Período</label>
-                            <select id="filterPeriod">
+                            <label for="reportType">Tipo de Relatório</label>
+                            <select id="reportType">
+                                <option value="income-expense">Receitas vs Despesas</option>
+                                <option value="categories">Gastos por Categoria</option>
+                                <option value="monthly">Evolução Mensal</option>
+                                <option value="yearly">Comparativo Anual</option>
+                            </select>
+                        </div>
+                        <div class="filter-group">
+                            <label for="reportPeriod">Período</label>
+                            <select id="reportPeriod">
                                 <option value="month">Este Mês</option>
                                 <option value="quarter">Este Trimestre</option>
                                 <option value="year">Este Ano</option>
                                 <option value="custom">Personalizado</option>
                             </select>
                         </div>
-                        <div class="filter-group">
-                            <label for="filterType">Tipo</label>
-                            <select id="filterType">
-                                <option value="all">Todos</option>
-                                <option value="income">Receitas</option>
-                                <option value="expense">Despesas</option>
-                            </select>
-                        </div>
-                        <div class="filter-group">
-                            <label for="filterCategory">Categoria</label>
-                            <select id="filterCategory">
-                                <option value="all">Todas</option>
-                                <!-- Categorias serão carregadas dinamicamente -->
-                            </select>
-                        </div>
-                    </div>
-                </div>
-                
-                <div class="transactions-table-container">
-                    <table class="data-table transactions-table">
-                        <thead>
-                            <tr>
-                                <th>Data</th>
-                                <th>Descrição</th>
-                                <th>Categoria</th>
-                                <th>Valor</th>
-                                <th>Ações</th>
-                            </tr>
-                        </thead>
-                        <tbody id="transactionsTableBody">
-                            <!-- Transações serão carregadas dinamicamente -->
-                            <tr class="empty-row">
-                                <td colspan="5">Carregando transações...</td>
-                            </tr>
-                        </tbody>
-                    </table>
-                </div>
-                
-                <div class="pagination">
-                    <button class="btn btn-secondary" id="prevPageBtn" disabled>
-                        <i class="fas fa-chevron-left"></i> Anterior
-                    </button>
-                    <span class="pagination-info">Página <span id="currentPage">1</span> de <span id="totalPages">1</span></span>
-                    <button class="btn btn-secondary" id="nextPageBtn" disabled>
-                        Próxima <i class="fas fa-chevron-right"></i>
-                    </button>
-                </div>
-            `,
-            budgets: `
-                <h2>Orçamentos</h2>
-                <div class="page-actions">
-                    <button class="btn btn-primary" id="newBudgetBtn">
-                        <i class="fas fa-plus"></i> Novo Orçamento
-                    </button>
-                </div>
-                
-                <div class="budget-overview">
-                    <div class="progress-card">
-                        <h3>Orçamento do Mês</h3>
-                        <div class="progress-bar">
-                            <div class="progress-bar-fill" style="width: 65%"></div>
-                        </div>
-                        <div class="progress-info">
-                            <span>65% utilizado</span>
-                            <span>R$ 3.250,00 / R$ 5.000,00</span>
-                        </div>
-                    </div>
-                </div>
-                
-                <div class="budget-categories">
-                    <h3>Categorias</h3>
-                    <div class="budget-cards">
-                        <!-- Orçamentos por categoria serão carregados dinamicamente -->
-                        <div class="empty-state">
-                            <i class="fas fa-piggy-bank"></i>
-                            <p>Você não definiu orçamentos por categoria</p>
-                            <button class="btn btn-primary" id="addCategoryBudgetBtn">Adicionar Categoria</button>
-                        </div>
-                    </div>
-                </div>
-            `,
-            goals: `
-                <h2>Metas Financeiras</h2>
-                <div class="page-actions">
-                    <button class="btn btn-primary" id="newGoalBtn">
-                        <i class="fas fa-plus"></i> Nova Meta
-                    </button>
-                </div>
-                
-                <div class="goals-grid">
-                    <!-- Metas serão carregadas dinamicamente -->
-                    <div class="empty-state">
-                        <i class="fas fa-bullseye"></i>
-                        <p>Você não tem metas definidas</p>
-                        <button class="btn btn-primary" id="addFirstGoalBtn">Adicionar Meta</button>
-                    </div>
-                </div>
-            `,
-            reports: `
-                <h2>Relatórios</h2>
-                
-                <div class="report-filters">
-                    <div class="filter-group">
-                        <label for="reportType">Tipo de Relatório</label>
-                        <select id="reportType">
-                            <option value="income-expense">Receitas vs Despesas</option>
-                            <option value="categories">Gastos por Categoria</option>
-                            <option value="monthly">Evolução Mensal</option>
-                            <option value="yearly">Comparativo Anual</option>
-                        </select>
-                    </div>
-                    <div class="filter-group">
-                        <label for="reportPeriod">Período</label>
-                        <select id="reportPeriod">
-                            <option value="month">Este Mês</option>
-                            <option value="quarter">Este Trimestre</option>
-                            <option value="year">Este Ano</option>
-                            <option value="custom">Personalizado</option>
-                        </select>
-                    </div>
-                    <button class="btn btn-primary" id="generateReportBtn">
-                        <i class="fas fa-chart-bar"></i> Gerar Relatório
-                    </button>
-                </div>
-                
-                <div class="report-container">
-                    <div class="report-loading hidden">
-                        <i class="fas fa-spinner fa-spin"></i>
-                        <p>Gerando relatório...</p>
-                    </div>
-                    
-                    <div class="report-content hidden">
-                        <!-- O conteúdo do relatório será carregado aqui -->
-                    </div>
-                    
-                    <div class="report-empty-state">
-                        <i class="fas fa-chart-line"></i>
-                        <p>Selecione um tipo de relatório e clique em "Gerar Relatório"</p>
-                    </div>
-                </div>
-            `,
-            profile: `
-                <h2>Perfil do Usuário</h2>
-                
-                <div class="profile-container">
-                    <div class="profile-section">
-                        <h3>Informações Pessoais</h3>
-                        <form id="profileForm">
-                            <div class="form-group">
-                                <label for="userName">Nome</label>
-                                <input type="text" id="userName" value="Usuário">
-                            </div>
-                            <div class="form-group">
-                                <label for="userEmail">Email</label>
-                                <input type="email" id="userEmail" value="usuario@exemplo.com">
-                            </div>
-                            <div class="form-actions">
-                                <button type="submit" class="btn btn-primary">Salvar Alterações</button>
-                            </div>
-                        </form>
-                    </div>
-                    
-                    <div class="profile-section">
-                        <h3>Alterar Senha</h3>
-                        <form id="passwordForm">
-                            <div class="form-group">
-                                <label for="currentPassword">Senha Atual</label>
-                                <input type="password" id="currentPassword">
-                            </div>
-                            <div class="form-group">
-                                <label for="newPassword">Nova Senha</label>
-                                <input type="password" id="newPassword">
-                            </div>
-                            <div class="form-group">
-                                <label for="confirmPassword">Confirmar Nova Senha</label>
-                                <input type="password" id="confirmPassword">
-                            </div>
-                            <div class="form-actions">
-                                <button type="submit" class="btn btn-primary">Alterar Senha</button>
-                            </div>
-                        </form>
-                    </div>
-                </div>
-            `,
-            settings: `
-                <h2>Configurações</h2>
-                
-                <div class="settings-container">
-                    <div class="settings-section">
-                        <h3>Preferências Gerais</h3>
-                        <div class="form-group">
-                            <label for="dateFormat">Formato de Data</label>
-                            <select id="dateFormat">
-                                <option value="dd/mm/yyyy">DD/MM/AAAA</option>
-                                <option value="mm/dd/yyyy">MM/DD/AAAA</option>
-                                <option value="yyyy-mm-dd">AAAA-MM-DD</option>
-                            </select>
-                        </div>
-                        <div class="form-group">
-                            <label for="currency">Moeda</label>
-                            <select id="currency">
-                                <option value="BRL">Real Brasileiro (R$)</option>
-                                <option value="USD">Dólar Americano ($)</option>
-                                <option value="EUR">Euro (€)</option>
-                            </select>
-                        </div>
-                        <div class="form-group">
-                            <label for="theme">Tema</label>
-                            <select id="theme">
-                                <option value="light">Claro</option>
-                                <option value="dark">Escuro</option>
-                                <option value="system">Sistema</option>
-                            </select>
-                        </div>
-                    </div>
-                    
-                    <div class="settings-section">
-                        <h3>Gerenciar Categorias</h3>
-                        <div class="category-tabs">
-                            <button class="category-tab active" data-type="income">Receitas</button>
-                            <button class="category-tab" data-type="expense">Despesas</button>
-                        </div>
-                        <div class="category-list" id="categoryList">
-                            <!-- Categorias serão carregadas dinamicamente -->
-                        </div>
-                        <button class="btn btn-primary" id="addCategoryBtn">
-                            <i class="fas fa-plus"></i> Nova Categoria
+                        <button class="btn btn-primary" id="generateReportBtn">
+                            <i class="fas fa-chart-bar"></i> Gerar Relatório
                         </button>
                     </div>
                     
-                    <div class="settings-section">
-                        <h3>Exportar / Importar Dados</h3>
-                        <div class="export-import-buttons">
-                            <button class="btn btn-secondary" id="exportDataBtn">
-                                <i class="fas fa-download"></i> Exportar Dados
-                            </button>
-                            <button class="btn btn-secondary" id="importDataBtn">
-                                <i class="fas fa-upload"></i> Importar Dados
-                            </button>
+                    <div class="report-container">
+                        <div class="report-loading hidden">
+                            <i class="fas fa-spinner fa-spin"></i>
+                            <p>Gerando relatório...</p>
+                        </div>
+                        
+                        <div class="report-content hidden">
+                            <!-- O conteúdo do relatório será carregado aqui -->
+                        </div>
+                        
+                        <div class="report-empty-state">
+                            <i class="fas fa-chart-line"></i>
+                            <p>Selecione um tipo de relatório e clique em "Gerar Relatório"</p>
                         </div>
                     </div>
-                </div>
-            `
-        };
+                `,
+                profile: `
+                    <h2>Perfil do Usuário</h2>
+                    
+                    <div class="profile-container">
+                        <div class="profile-section">
+                            <h3>Informações Pessoais</h3>
+                            <form id="profileForm">
+                                <div class="form-group">
+                                    <label for="userName">Nome</label>
+                                    <input type="text" id="userName" value="Usuário">
+                                </div>
+                                <div class="form-group">
+                                    <label for="userEmail">Email</label>
+                                    <input type="email" id="userEmail" value="usuario@exemplo.com">
+                                </div>
+                                <div class="form-actions">
+                                    <button type="submit" class="btn btn-primary">Salvar Alterações</button>
+                                </div>
+                            </form>
+                        </div>
+                        
+                        <div class="profile-section">
+                            <h3>Alterar Senha</h3>
+                            <form id="passwordForm">
+                                <div class="form-group">
+                                    <label for="currentPassword">Senha Atual</label>
+                                    <input type="password" id="currentPassword">
+                                </div>
+                                <div class="form-group">
+                                    <label for="newPassword">Nova Senha</label>
+                                    <input type="password" id="newPassword">
+                                </div>
+                                <div class="form-group">
+                                    <label for="confirmPassword">Confirmar Nova Senha</label>
+                                    <input type="password" id="confirmPassword">
+                                </div>
+                                <div class="form-actions">
+                                    <button type="submit" class="btn btn-primary">Alterar Senha</button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                `,
+                settings: `
+                    <h2>Configurações</h2>
+                    
+                    <div class="settings-container">
+                        <div class="settings-section">
+                            <h3>Preferências Gerais</h3>
+                            <div class="form-group">
+                                <label for="dateFormat">Formato de Data</label>
+                                <select id="dateFormat">
+                                    <option value="dd/mm/yyyy">DD/MM/AAAA</option>
+                                    <option value="mm/dd/yyyy">MM/DD/AAAA</option>
+                                    <option value="yyyy-mm-dd">AAAA-MM-DD</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label for="currency">Moeda</label>
+                                <select id="currency">
+                                    <option value="BRL">Real Brasileiro (R$)</option>
+                                    <option value="USD">Dólar Americano ($)</option>
+                                    <option value="EUR">Euro (€)</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label for="theme">Tema</label>
+                                <select id="theme">
+                                    <option value="light">Claro</option>
+                                    <option value="dark">Escuro</option>
+                                    <option value="system">Sistema</option>
+                                </select>
+                            </div>
+                        </div>
+                        
+                        <div class="settings-section">
+                            <h3>Gerenciar Categorias</h3>
+                            <div class="category-tabs">
+                                <button class="category-tab active" data-type="income">Receitas</button>
+                                <button class="category-tab" data-type="expense">Despesas</button>
+                            </div>
+                            <div class="category-list" id="categoryList">
+                                <!-- Categorias serão carregadas dinamicamente -->
+                            </div>
+                            <button class="btn btn-primary" id="addCategoryBtn">
+                                <i class="fas fa-plus"></i> Nova Categoria
+                            </button>
+                        </div>
+                        
+                        <div class="settings-section">
+                            <h3>Exportar / Importar Dados</h3>
+                            <div class="export-import-buttons">
+                                <button class="btn btn-secondary" id="exportDataBtn">
+                                    <i class="fas fa-download"></i> Exportar Dados
+                                </button>
+                                <button class="btn btn-secondary" id="importDataBtn">
+                                    <i class="fas fa-upload"></i> Importar Dados
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                `
+            };
+            const template = templates[pageName] || `<h2>${pageName.charAt(0).toUpperCase() + pageName.slice(1)}</h2><p>Conteúdo em desenvolvimento.</p>`;
         
-        return templates[pageName] || `<h2>${pageName.charAt(0).toUpperCase() + pageName.slice(1)}</h2><p>Conteúdo em desenvolvimento.</p>`;
+            console.log(`UIManager: Conteúdo da página ${pageName} carregado com sucesso`);
+            return template;
+        } catch (error) {
+            console.error(`UIManager: Erro ao buscar conteúdo da página ${pageName}:`, error);
+            return `<div class="error-container"><h2>Erro</h2><p>Não foi possível carregar a página ${pageName}.</p></div>`;
+        }
     }
     
     /**
      * Inicializa componentes específicos de uma página
      * @param {string} pageName - Nome da página
+     * @param {HTMLElement} pageElement - Elemento da página
      */
-    initializePageComponents(pageName) {
+    initializePageComponents(pageName, pageElement) {
+        if (!pageElement) return;
+        
         // Inicializar componentes específicos de cada página
         switch (pageName) {
             case 'transactions':
-                this.initializeTransactionsPage();
+                this.initializeTransactionsPage(pageElement);
                 break;
             case 'budgets':
-                this.initializeBudgetsPage();
+                this.initializeBudgetsPage(pageElement);
                 break;
             case 'goals':
-                this.initializeGoalsPage();
+                this.initializeGoalsPage(pageElement);
                 break;
             case 'reports':
-                this.initializeReportsPage();
+                this.initializeReportsPage(pageElement);
                 break;
             case 'settings':
-                this.initializeSettingsPage();
+                this.initializeSettingsPage(pageElement);
                 break;
             default:
                 // Nada a fazer para outras páginas
@@ -544,12 +499,16 @@ export class UIManager {
     
     /**
      * Inicializa componentes da página de transações
+     * @param {HTMLElement} pageElement - Elemento da página
      */
-    initializeTransactionsPage() {
+    initializeTransactionsPage(pageElement) {
         // Botão de nova transação
-        document.getElementById('newTransactionBtn')?.addEventListener('click', () => {
-            this.openModal('addTransactionModal');
-        });
+        const newTransactionBtn = pageElement.querySelector('#newTransactionBtn');
+        if (newTransactionBtn) {
+            newTransactionBtn.addEventListener('click', () => {
+                this.openModal('addTransactionModal');
+            });
+        }
         
         // Eventos para filtros e paginação seriam adicionados aqui
         // Este é um exemplo simplificado
@@ -557,30 +516,139 @@ export class UIManager {
     
     /**
      * Inicializa componentes da página de orçamentos
+     * @param {HTMLElement} pageElement - Elemento da página
      */
-    initializeBudgetsPage() {
+    initializeBudgetsPage(pageElement) {
         // Implementação dos componentes da página de orçamentos
+        const newBudgetBtn = pageElement.querySelector('#newBudgetBtn');
+        if (newBudgetBtn) {
+            newBudgetBtn.addEventListener('click', () => {
+                // Implementar abertura do modal de orçamento
+                this.showInfo('Funcionalidade em desenvolvimento');
+            });
+        }
     }
     
     /**
      * Inicializa componentes da página de metas
+     * @param {HTMLElement} pageElement - Elemento da página
      */
-    initializeGoalsPage() {
+    initializeGoalsPage(pageElement) {
         // Implementação dos componentes da página de metas
+        const newGoalBtn = pageElement.querySelector('#newGoalBtn');
+        if (newGoalBtn) {
+            newGoalBtn.addEventListener('click', () => {
+                this.openModal('addGoalModal');
+            });
+        }
+        
+        const addFirstGoalBtn = pageElement.querySelector('#addFirstGoalBtn');
+        if (addFirstGoalBtn) {
+            addFirstGoalBtn.addEventListener('click', () => {
+                this.openModal('addGoalModal');
+            });
+        }
     }
     
     /**
      * Inicializa componentes da página de relatórios
+     * @param {HTMLElement} pageElement - Elemento da página
      */
-    initializeReportsPage() {
+    initializeReportsPage(pageElement) {
         // Implementação dos componentes da página de relatórios
+        const generateReportBtn = pageElement.querySelector('#generateReportBtn');
+        if (generateReportBtn) {
+            generateReportBtn.addEventListener('click', () => {
+                // Simulação de geração de relatório
+                const reportLoading = pageElement.querySelector('.report-loading');
+                const reportContent = pageElement.querySelector('.report-content');
+                const emptyState = pageElement.querySelector('.report-empty-state');
+                
+                if (reportLoading && reportContent && emptyState) {
+                    // Mostrar loading
+                    emptyState.classList.add('hidden');
+                    reportLoading.classList.remove('hidden');
+                    
+                    // Simular carregamento
+                    setTimeout(() => {
+                        reportLoading.classList.add('hidden');
+                        reportContent.classList.remove('hidden');
+                        reportContent.innerHTML = '<h3>Relatório Gerado</h3><p>Conteúdo do relatório será exibido aqui.</p>';
+                    }, 1500);
+                }
+            });
+        }
     }
     
     /**
      * Inicializa componentes da página de configurações
+     * @param {HTMLElement} pageElement - Elemento da página
      */
-    initializeSettingsPage() {
+    initializeSettingsPage(pageElement) {
         // Implementação dos componentes da página de configurações
+        if (!pageElement) return;
+        
+        // Alternar entre abas de categorias
+        const categoryTabs = pageElement.querySelectorAll('.category-tab');
+        if (categoryTabs.length > 0) {
+            categoryTabs.forEach(tab => {
+                tab.addEventListener('click', () => {
+                    // Remover classe active de todas as abas
+                    categoryTabs.forEach(t => t.classList.remove('active'));
+                    
+                    // Adicionar classe active na aba clicada
+                    tab.classList.add('active');
+                    
+                    // Carregar categorias do tipo selecionado
+                    const type = tab.dataset.type;
+                    this.loadCategories(type);
+                });
+            });
+        }
+    }
+    
+    /**
+     * Carrega categorias por tipo
+     * @param {string} type - Tipo de categoria ('income' ou 'expense')
+     */
+    loadCategories(type) {
+        // Obter categorias do storageManager
+        const storageManager = singletonManager.get('storageManager');
+        if (!storageManager) return;
+        
+        const categories = storageManager.getCategories();
+        if (!categories || !categories[type]) return;
+        
+        // Obter elemento da lista de categorias
+        const categoryList = document.getElementById('categoryList');
+        if (!categoryList) return;
+        
+        // Limpar lista atual
+        categoryList.innerHTML = '';
+        
+        // Adicionar categorias
+        categories[type].forEach(category => {
+            const categoryItem = document.createElement('div');
+            categoryItem.className = 'category-item';
+            categoryItem.innerHTML = `
+                <div class="category-icon">
+                    <i class="fas ${category.icon}"></i>
+                </div>
+                <div class="category-name">
+                    ${category.name}
+                </div>
+                <div class="category-actions">
+                    <button class="btn btn-icon" data-action="edit" data-id="${category.id}">
+                        <i class="fas fa-edit"></i>
+                    </button>
+                    <button class="btn btn-icon" data-action="delete" data-id="${category.id}">
+                        <i class="fas fa-trash"></i>
+                    </button>
+                </div>
+            `;
+            
+            categoryList.appendChild(categoryItem);
+        });
     }
     
     /**
@@ -646,20 +714,53 @@ export class UIManager {
      * @param {string} message - Mensagem de erro
      */
     showError(message) {
-        // Implementação simples para exibir erro
-        alert(message);
+        this.showToast(message, 'error');
     }
     
     /**
      * Exibe uma mensagem de sucesso
      * @param {string} message - Mensagem de sucesso
+     * @param {number} duration - Duração em ms
      */
     showSuccess(message, duration = 3000) {
+        this.showToast(message, 'success', duration);
+    }
+    
+    /**
+     * Exibe uma mensagem informativa
+     * @param {string} message - Mensagem informativa
+     * @param {number} duration - Duração em ms
+     */
+    showInfo(message, duration = 3000) {
+        this.showToast(message, 'info', duration);
+    }
+    
+    /**
+     * Exibe um toast (notificação)
+     * @param {string} message - Mensagem a exibir
+     * @param {string} type - Tipo de toast ('success', 'error', 'info')
+     * @param {number} duration - Duração em ms
+     */
+    showToast(message, type = 'info', duration = 3000) {
         // Criar elemento de toast
         const toast = document.createElement('div');
-        toast.className = 'toast toast-success';
+        toast.className = `toast toast-${type}`;
+        
+        // Adicionar ícone conforme o tipo
+        let icon;
+        switch (type) {
+            case 'success':
+                icon = 'fa-check-circle';
+                break;
+            case 'error':
+                icon = 'fa-exclamation-circle';
+                break;
+            default:
+                icon = 'fa-info-circle';
+        }
+        
         toast.innerHTML = `
-            <i class="fas fa-check-circle"></i>
+            <i class="fas ${icon}"></i>
             <span>${message}</span>
         `;
         
@@ -679,4 +780,49 @@ export class UIManager {
             }, 300);
         }, duration);
     }
+
+    /**
+     * Mostra um indicador de carregamento em um container
+     * @param {string} containerId - ID do container
+     */
+    showLoading(containerId) {
+        const container = document.getElementById(containerId);
+        if (!container) return;
+        
+        // Verificar se já existe um loading overlay
+        let loadingOverlay = container.querySelector('.loading-overlay');
+        
+        if (!loadingOverlay) {
+            // Criar overlay de loading
+            loadingOverlay = document.createElement('div');
+            loadingOverlay.className = 'loading-overlay';
+            loadingOverlay.innerHTML = '<div class="spinner"></div>';
+            
+            // Adicionar ao container
+            container.style.position = 'relative';
+            container.appendChild(loadingOverlay);
+        }
+        
+        // Garantir que o overlay é visível
+        loadingOverlay.style.display = 'flex';
+    }
+    
+    /**
+     * Oculta o indicador de carregamento de um container
+     * @param {string} containerId - ID do container
+     */
+    hideLoading(containerId) {
+        const container = document.getElementById(containerId);
+        if (!container) return;
+        
+        // Buscar overlay de loading
+        const loadingOverlay = container.querySelector('.loading-overlay');
+        
+        if (loadingOverlay) {
+            loadingOverlay.style.display = 'none';
+        }
+    }
 }
+
+// Exportar classe para ser usada em módulos
+export default UIManager;
